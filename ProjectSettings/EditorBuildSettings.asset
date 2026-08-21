@@ -6,7 +6,8 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/_game/Content/Scenes/Demo/DemoScene.unity
-    guid: ad9cf643a69ff444d903391590b03e3d
+    path: Assets/_game/Generated/CanopusPrototype/CanopusPrototype.unity
+    guid: d22b6f41da5fb3a4987b05efbe718b3b
   m_configObjects:
+    com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
