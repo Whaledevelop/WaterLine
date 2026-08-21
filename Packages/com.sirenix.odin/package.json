@@ -1,0 +1,10 @@
+{
+  "name": "com.sirenix.odin",
+  "version": "3.1.13",
+  "displayName": "Odin Inspector",
+  "description": "Odin Inspector",
+  "keywords": [
+    "odin"
+  ],
+  "dependencies": {}
+}

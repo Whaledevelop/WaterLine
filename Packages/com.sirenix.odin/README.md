@@ -1,0 +1,1 @@
+"com.sirenix.odin": "file:../Packages/com.sirenix.odin"
