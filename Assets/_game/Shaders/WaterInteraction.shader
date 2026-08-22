@@ -2,10 +2,13 @@ Shader "Game/WaterInteraction"
 {
     Properties
     {
-        _Tint("Tint", Color) = (0.86,0.97,1,1)
-        _NoiseScale("Noise Scale", Float) = 2.8
-        _NoiseSpeed("Noise Speed", Vector) = (0.08,0.025,0,0)
-        _EdgeSoftness("Edge Softness", Range(0.01,1)) = 0.22
+        _FoamTex("Foam Texture", 2D) = "white" {}
+        _Tint("Tint", Color) = (0.92,0.985,1,1)
+        _TextureScale("Texture Scale", Vector) = (1,1,0,0)
+        _FlowSpeed("Flow Speed", Float) = 0.08
+        _TextureThreshold("Texture Threshold", Range(0,1)) = 0.58
+        _TextureSoftness("Texture Softness", Range(0.01,0.5)) = 0.16
+        _EdgeSoftness("Edge Softness", Range(0.01,1)) = 0.12
     }
     SubShader
     {
@@ -37,9 +40,14 @@ Shader "Game/WaterInteraction"
             };
 
             float4 _Tint;
-            float4 _NoiseSpeed;
-            float _NoiseScale;
+            float4 _TextureScale;
+            float _FlowSpeed;
+            float _TextureThreshold;
+            float _TextureSoftness;
             float _EdgeSoftness;
+
+            TEXTURE2D(_FoamTex);
+            SAMPLER(sampler_FoamTex);
 
             Varyings Vert(Attributes input)
             {
@@ -54,11 +62,15 @@ Shader "Game/WaterInteraction"
 
             half4 Frag(Varyings input) : SV_Target
             {
-                float2 noiseUv = input.positionWS.xy * _NoiseScale + _Time.y * _NoiseSpeed.xy;
-                half noise = sin(noiseUv.x * 2.13 + sin(noiseUv.y * 1.71));
-                noise = noise * 0.5 + 0.5;
+                float2 foamUv = input.uv * _TextureScale.xy;
+                foamUv.x -= _Time.y * _FlowSpeed;
+                half3 foamColor = SAMPLE_TEXTURE2D(_FoamTex, sampler_FoamTex, foamUv).rgb;
+                half foam = dot(foamColor, half3(0.299, 0.587, 0.114));
+                foam = smoothstep(_TextureThreshold - _TextureSoftness, _TextureThreshold + _TextureSoftness, foam);
                 half edge = smoothstep(0, _EdgeSoftness, input.uv.y) * smoothstep(0, _EdgeSoftness, 1 - input.uv.y);
-                half alpha = input.color.a * lerp(0.35, 1, noise) * edge;
+                half center = 1 - abs(input.uv.y * 2 - 1);
+                half streaks = lerp(0.35, 1, smoothstep(0.08, 0.9, center));
+                half alpha = input.color.a * foam * edge * streaks;
 
                 return half4(_Tint.rgb * input.color.rgb, alpha * _Tint.a);
             }

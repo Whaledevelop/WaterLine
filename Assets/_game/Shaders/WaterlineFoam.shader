@@ -66,13 +66,16 @@ Shader "Game/WaterlineFoam"
 
             half4 Frag(Varyings input) : SV_Target
             {
-                half mask = SAMPLE_TEXTURE2D(_WaterlineMask, sampler_WaterlineMask, input.uv).r;
+                half3 mask = SAMPLE_TEXTURE2D(_WaterlineMask, sampler_WaterlineMask, input.uv).rgb;
                 float2 noiseUv = input.positionWS.xy * _NoiseScale + _Time.y * _NoiseSpeed.xy;
                 half firstNoise = sin(noiseUv.x * 2.17 + sin(noiseUv.y * 1.63));
                 half secondNoise = sin(noiseUv.y * 3.11 - noiseUv.x * 0.73);
                 half noise = saturate(firstNoise * 0.3 + secondNoise * 0.2 + 0.65);
-                half strength = lerp(0.32, 1, _Intensity);
-                half alpha = mask * lerp(0.45, 1, noise) * strength * input.color.a;
+                half waterline = mask.r * lerp(0.2, 0.42, _Intensity);
+                half bowWave = mask.g * _Intensity * 1.35;
+                half sternWash = mask.b * _Intensity * 0.62;
+                half alpha = saturate(waterline + bowWave + sternWash);
+                alpha *= lerp(0.48, 1, noise) * input.color.a;
 
                 return half4(_Tint.rgb, alpha * _Tint.a);
             }
