@@ -4,17 +4,32 @@ namespace Game.Ships
 {
     public sealed partial class ShipWakeView
     {
-        private float GetIntensity(int index, float normalizedSpeed)
+        private float GetIntensity(int index, int pathPointCount, float normalizedSpeed)
         {
-            return index == 0 ? normalizedSpeed : _points[index - 1].Intensity;
+            if (index == 0)
+            {
+                return normalizedSpeed;
+            }
+
+            var pointIndex = GetSourcePointIndex(index, pathPointCount);
+
+            return _points[pointIndex].Intensity;
         }
 
-        private float GetAlpha(int index, float tailFactor, float intensity)
+        private float GetAlpha(int index, int pathPointCount, float tailFactor, float intensity)
         {
-            var age = index == 0 ? 0f : _points[index - 1].Age;
+            var age = index == 0 ? 0f : _points[GetSourcePointIndex(index, pathPointCount)].Age;
             var lifeFactor = 1f - Mathf.Clamp01(age / _lifetime);
 
-            return lifeFactor * Mathf.Lerp(0.08f, 1f, 1f - tailFactor) * Mathf.Lerp(0.45f, 1f, intensity);
+            return lifeFactor * lifeFactor * Mathf.Lerp(0.08f, 1f, 1f - tailFactor) *
+                Mathf.Lerp(0.45f, 1f, intensity);
+        }
+
+        private int GetSourcePointIndex(int pathIndex, int pathPointCount)
+        {
+            var pathFactor = (float)pathIndex / (pathPointCount - 1);
+
+            return Mathf.Clamp(Mathf.RoundToInt(pathFactor * (_points.Count - 1)), 0, _points.Count - 1);
         }
 
         private static void GetFrame(Vector2[] positions, int index, out Vector2 normal)
@@ -23,6 +38,37 @@ namespace Game.Ships
             var next = index == positions.Length - 1 ? positions[index] : positions[index + 1];
             var tangent = (next - previous).normalized;
             normal = new Vector2(-tangent.y, tangent.x);
+        }
+
+        private static void GetRibbonJoin(Vector2[] positions, int index, out Vector2 normal, out float scale)
+        {
+            var previousIndex = Mathf.Max(0, index - 1);
+            var nextIndex = Mathf.Min(positions.Length - 1, index + 1);
+            var incoming = (positions[index] - positions[previousIndex]).normalized;
+            var outgoing = (positions[nextIndex] - positions[index]).normalized;
+            if (index == 0)
+            {
+                incoming = outgoing;
+            }
+            else if (index == positions.Length - 1)
+            {
+                outgoing = incoming;
+            }
+
+            var incomingNormal = new Vector2(-incoming.y, incoming.x);
+            var outgoingNormal = new Vector2(-outgoing.y, outgoing.x);
+            var alignment = Vector2.Dot(incoming, outgoing);
+            if (alignment < -0.35f)
+            {
+                normal = outgoingNormal;
+                scale = 1f;
+
+                return;
+            }
+
+            normal = (incomingNormal + outgoingNormal).normalized;
+            var denominator = Mathf.Abs(Vector2.Dot(normal, outgoingNormal));
+            scale = Mathf.Min(1.35f, 1f / Mathf.Max(0.35f, denominator));
         }
 
         private static void SetStrip(Vector3[] vertices, Vector2[] uv, Color[] colors, int vertexIndex,

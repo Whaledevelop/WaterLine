@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: CanopusHull
-  m_Shader: {fileID: 4800000, guid: 7f7d82acaa87d2042a6ec3d9938150d1, type: 3}
+  m_Name: BowEffects
+  m_Shader: {fileID: 4800000, guid: a674545cb2cc54749939461c71790247, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -23,21 +23,18 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
-    - _MainTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _SubmersionMask:
-        m_Texture: {fileID: 0}
+    - _FoamTex:
+        m_Texture: {fileID: 2800000, guid: 7a728ef3dd68a124b97c53a2685a9b12, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _RedHullThreshold: 0.178
-    - _UnderwaterAlphaMultiplier: 0.55
-    - _UseSubmersionMask: 0
+    - _EdgeSoftness: 0.12
+    - _FlowSpeed: 0.08
+    - _TextureSoftness: 0.16
+    - _TextureThreshold: 0.58
     m_Colors:
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _RendererColor: {r: 1, g: 1, b: 1, a: 1}
+    - _TextureScale: {r: 1.25, g: 1.1, b: 0, a: 0}
+    - _Tint: {r: 0.92, g: 0.985, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

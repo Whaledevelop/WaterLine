@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: WaterEffects
-  m_Shader: {fileID: 4800000, guid: a674545cb2cc54749939461c71790247, type: 3}
+  m_Shader: {fileID: 4800000, guid: 7fd47d457a2d3874eb97fb70dfb444e6, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -36,12 +36,21 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _WakeTexA:
+        m_Texture: {fileID: 2800000, guid: 8ee5e52704a93d94c87952941e771c29, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _WakeTexB:
+        m_Texture: {fileID: 2800000, guid: e0c88b5547ca0eb45be1eb405e4076fd, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
     - PixelSnap: 1
+    - _AlphaPower: 1.25
     - _EdgeSoftness: 0.12
     - _EnableExternalAlpha: 0
-    - _FlowSpeed: 0.08
+    - _FlowSpeed: 0.01
     - _NoiseScale: 4.2
     - _TextureSoftness: 0.16
     - _TextureThreshold: 0.58
@@ -51,6 +60,6 @@ Material:
     - _NoiseSpeed: {r: 0.14, g: 0.045, b: 0, a: 0}
     - _RendererColor: {r: 1, g: 1, b: 1, a: 1}
     - _TextureScale: {r: 1.25, g: 1.1, b: 0, a: 0}
-    - _Tint: {r: 0.92, g: 0.985, b: 1, a: 1}
+    - _Tint: {r: 0.92, g: 0.985, b: 1, a: 0.9}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

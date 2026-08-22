@@ -79,7 +79,8 @@ namespace Game.Prototype
             var interactionPose = _waterInteractionResolver.Resolve(_model.Position, _model.Heading);
             _shipView.Tick(_model.Position, deltaTime);
             _foamView.Tick(normalizedSpeed, deltaTime);
-            _wakeView.Tick(interactionPose.Stern, normalizedSpeed, deltaTime);
+            _wakeView.Tick(interactionPose.Bow, interactionPose.Stern, interactionPose.Port,
+                interactionPose.Starboard, normalizedSpeed, deltaTime);
             _waterView.Tick(Time.time);
         }
     }

@@ -5,6 +5,7 @@ Shader "Game/SubmergedSprite"
         _MainTex("Sprite", 2D) = "white" {}
         [PerRendererData] _SubmersionMask("Submersion Mask", 2D) = "black" {}
         [PerRendererData] _UseSubmersionMask("Use Submersion Mask", Float) = 0
+        _UnderwaterAlphaMultiplier("Underwater Alpha Multiplier", Range(0,1)) = 0.55
         [HideInInspector] _Color("Tint", Color) = (1,1,1,1)
         [HideInInspector] _RendererColor("Renderer Color", Color) = (1,1,1,1)
     }
@@ -45,6 +46,7 @@ Shader "Game/SubmergedSprite"
             CBUFFER_END
 
             float _UseSubmersionMask;
+            float _UnderwaterAlphaMultiplier;
 
             Varyings Vert(Attributes input)
             {
@@ -61,6 +63,7 @@ Shader "Game/SubmergedSprite"
                 half4 color = CommonUnlitFragment(input, input.color);
                 half mask = SAMPLE_TEXTURE2D(_SubmersionMask, sampler_SubmersionMask, input.uv).r;
                 color.a *= 1 - mask * _UseSubmersionMask;
+                color.a *= lerp(1.0, _UnderwaterAlphaMultiplier, mask * _UseSubmersionMask);
 
                 return color;
             }

@@ -73,7 +73,7 @@ Shader "Game/WaterlineFoam"
                 half noise = saturate(firstNoise * 0.3 + secondNoise * 0.2 + 0.65);
                 half waterline = mask.r * lerp(0.2, 0.42, _Intensity);
                 half bowWave = mask.g * _Intensity * 1.35;
-                half sternWash = mask.b * _Intensity * 0.62;
+                half sternWash = mask.b * _Intensity * 1.12;
                 half alpha = saturate(waterline + bowWave + sternWash);
                 alpha *= lerp(0.48, 1, noise) * input.color.a;
 

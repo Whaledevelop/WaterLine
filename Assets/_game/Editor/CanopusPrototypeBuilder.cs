@@ -17,6 +17,9 @@ namespace Game.Editor
         private const string ScenePath = GeneratedPath + "/CanopusPrototype.unity";
         private const string FoamBreakupPath = "Assets/_game/Content/WaterEffects/FoamBreakup.png";
         private const string WakeDecalPath = "Assets/_game/Content/WaterEffects/WakeDecal.png";
+        private const string WakeCenterAPath = "Assets/_game/Content/WaterEffects/WakeCenterTurbulenceA.png";
+        private const string WakeCenterBPath = "Assets/_game/Content/WaterEffects/WakeCenterTurbulenceB.png";
+        private const string WakeSidePath = "Assets/_game/Content/WaterEffects/WakeSideBreaker.png";
 
         [MenuItem("Game/Build Canopus Prototype")]
         public static void Build()
@@ -26,21 +29,23 @@ namespace Game.Editor
             GenerateSubmersionMasks();
             var hullMaterial = CreateMaterial("CanopusHull", "Game/SubmergedSprite");
             var waterMaterial = CreateMaterial("AnimatedWater", "Game/AnimatedWater");
-            var effectsMaterial = CreateMaterial("WaterEffects", "Game/WaterInteraction");
-            var sideEffectsMaterial = CreateMaterial("WakeSideEffects", "Game/WaterInteraction");
+            var effectsMaterial = CreateMaterial("WaterEffects", "Game/WakeDecal");
+            var sideEffectsMaterial = CreateMaterial("WakeSideEffects", "Game/WakeRibbon");
             var residualEffectsMaterial = CreateMaterial("WakeResidualEffects", "Game/WaterInteraction");
+            var bowEffectsMaterial = CreateMaterial("BowEffects", "Game/WaterInteraction");
             var waterlineMaterial = CreateMaterial("WaterlineFoam", "Game/WaterlineFoam");
-            ConfigureEffectsMaterial(effectsMaterial, FoamBreakupPath, 1f, new Vector2(1.25f, 1.1f), 0.08f,
-                0.58f, 0.16f, 0.12f);
-            ConfigureEffectsMaterial(sideEffectsMaterial, FoamBreakupPath, 0.42f, new Vector2(0.75f, 1.4f), 0.035f,
-                0.64f, 0.15f, 0.2f);
+            ConfigureWakeMaterial(effectsMaterial, WakeCenterAPath, WakeCenterBPath, 0.9f, 0.01f, 1.25f);
+            ConfigureWakeRibbonMaterial(sideEffectsMaterial, WakeSidePath, 0.78f, 1.2f);
+            hullMaterial.SetFloat("_UnderwaterAlphaMultiplier", 0.55f);
             ConfigureEffectsMaterial(residualEffectsMaterial, WakeDecalPath, 0.38f, Vector2.one, 0f, 0.56f, 0.16f,
                 0.08f);
+            ConfigureEffectsMaterial(bowEffectsMaterial, FoamBreakupPath, 1f, new Vector2(1.25f, 1.1f), 0.08f,
+                0.58f, 0.16f, 0.12f);
             ConfigureWaterlineMaterial(waterlineMaterial);
             var profile = CreateProfile();
             AssetDatabase.SaveAssets();
             CreateScene(profile, hullMaterial, waterMaterial, effectsMaterial, sideEffectsMaterial,
-                residualEffectsMaterial, waterlineMaterial);
+                residualEffectsMaterial, bowEffectsMaterial, waterlineMaterial);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
         }
@@ -62,6 +67,9 @@ namespace Game.Editor
             ConfigureTexture("Assets/_game/Content/water 1.png", true);
             ConfigureEffectTexture(FoamBreakupPath, true);
             ConfigureEffectTexture(WakeDecalPath, false);
+            ConfigureEffectTexture(WakeCenterAPath, false);
+            ConfigureEffectTexture(WakeCenterBPath, false);
+            ConfigureEffectTexture(WakeSidePath, true);
             foreach (var path in Directory.GetFiles("Assets/_game/Content/Canopus", "*.png"))
             {
                 ConfigureTexture(path.Replace('\\', '/'), false);
@@ -280,6 +288,26 @@ namespace Game.Editor
             EditorUtility.SetDirty(material);
         }
 
+        private static void ConfigureWakeMaterial(Material material, string firstTexturePath, string secondTexturePath,
+            float opacity, float flowSpeed, float alphaPower)
+        {
+            material.SetTexture("_WakeTexA", AssetDatabase.LoadAssetAtPath<Texture2D>(firstTexturePath));
+            material.SetTexture("_WakeTexB", AssetDatabase.LoadAssetAtPath<Texture2D>(secondTexturePath));
+            material.SetColor("_Tint", new Color(0.92f, 0.985f, 1f, opacity));
+            material.SetFloat("_FlowSpeed", flowSpeed);
+            material.SetFloat("_AlphaPower", alphaPower);
+            EditorUtility.SetDirty(material);
+        }
+
+        private static void ConfigureWakeRibbonMaterial(Material material, string texturePath, float opacity,
+            float alphaPower)
+        {
+            material.SetTexture("_WakeTex", AssetDatabase.LoadAssetAtPath<Texture2D>(texturePath));
+            material.SetColor("_Tint", new Color(0.92f, 0.985f, 1f, opacity));
+            material.SetFloat("_AlphaPower", alphaPower);
+            EditorUtility.SetDirty(material);
+        }
+
         private static void ConfigureWaterlineMaterial(Material material)
         {
             material.SetColor("_Tint", new Color(0.9f, 0.985f, 1f, 1f));
@@ -303,43 +331,89 @@ namespace Game.Editor
             serializedProfile.FindProperty("<CrossfadeDuration>k__BackingField").floatValue = 0.1f;
             var directions = serializedProfile.FindProperty("<Directions>k__BackingField");
             directions.arraySize = 8;
-            SetDirection(directions.GetArrayElementAtIndex(0), ShipDirection.Right, "Canopus_base.png", new Vector2(-0.06f, -0.46f), new Vector2(2.25f, 0f), new Vector2(-2.25f, 0f), new Vector2(0f, 0.55f), new Vector2(0f, -0.55f));
-            SetDirection(directions.GetArrayElementAtIndex(1), ShipDirection.RightForward, "Canopus_45_RightTop.png", new Vector2(-0.12f, 0.04f), new Vector2(1.75f, 1.1f), new Vector2(-1.75f, -1.1f), new Vector2(-0.45f, 0.55f), new Vector2(0.45f, -0.55f));
-            SetDirection(directions.GetArrayElementAtIndex(2), ShipDirection.Forward, "Canopus_stern.png", new Vector2(-0.02f, 0f), new Vector2(0f, 1.35f), new Vector2(0f, -1.35f), new Vector2(-0.7f, 0f), new Vector2(0.7f, 0f));
-            SetDirection(directions.GetArrayElementAtIndex(3), ShipDirection.LeftForward, "Canopus_45_LeftTop.png", new Vector2(0.12f, 0.04f), new Vector2(-1.75f, 1.1f), new Vector2(1.75f, -1.1f), new Vector2(-0.45f, -0.55f), new Vector2(0.45f, 0.55f));
-            SetDirection(directions.GetArrayElementAtIndex(4), ShipDirection.Left, "Canopus_base_b.png", new Vector2(0.06f, -0.46f), new Vector2(-2.25f, 0f), new Vector2(2.25f, 0f), new Vector2(0f, -0.55f), new Vector2(0f, 0.55f));
-            SetDirection(directions.GetArrayElementAtIndex(5), ShipDirection.LeftBackward, "Canopus_45_LeftDown.png", new Vector2(-0.22f, -0.08f), new Vector2(-1.75f, -1.1f), new Vector2(1.75f, 1.1f), new Vector2(0.45f, -0.55f), new Vector2(-0.45f, 0.55f));
-            SetDirection(directions.GetArrayElementAtIndex(6), ShipDirection.Backward, "Canopus_bow.png", new Vector2(-0.02f, -0.02f), new Vector2(0f, -1.35f), new Vector2(0f, 1.35f), new Vector2(0.7f, 0f), new Vector2(-0.7f, 0f));
-            SetDirection(directions.GetArrayElementAtIndex(7), ShipDirection.RightBackward, "Canopus_45_RightDown.png", new Vector2(0.22f, -0.08f), new Vector2(1.75f, -1.1f), new Vector2(-1.75f, 1.1f), new Vector2(0.45f, 0.55f), new Vector2(-0.45f, -0.55f));
+            SetDirection(directions.GetArrayElementAtIndex(0), ShipDirection.Right, "Canopus_base.png", new Vector2(-0.06f, -0.46f), new Vector2(-2.25f, 0f), new Vector2(0f, 0.55f), new Vector2(0f, -0.55f));
+            SetDirection(directions.GetArrayElementAtIndex(1), ShipDirection.RightForward, "Canopus_45_RightTop.png", new Vector2(-0.12f, 0.04f), new Vector2(-1.75f, -1.1f), new Vector2(-0.45f, 0.55f), new Vector2(0.45f, -0.55f));
+            SetDirection(directions.GetArrayElementAtIndex(2), ShipDirection.Forward, "Canopus_stern.png", new Vector2(-0.02f, 0f), new Vector2(0f, -1.35f), new Vector2(-0.7f, 0f), new Vector2(0.7f, 0f));
+            SetDirection(directions.GetArrayElementAtIndex(3), ShipDirection.LeftForward, "Canopus_45_LeftTop.png", new Vector2(0.12f, 0.04f), new Vector2(1.75f, -1.1f), new Vector2(-0.45f, -0.55f), new Vector2(0.45f, 0.55f));
+            SetDirection(directions.GetArrayElementAtIndex(4), ShipDirection.Left, "Canopus_base_b.png", new Vector2(0.06f, -0.46f), new Vector2(2.25f, 0f), new Vector2(0f, -0.55f), new Vector2(0f, 0.55f));
+            SetDirection(directions.GetArrayElementAtIndex(5), ShipDirection.LeftBackward, "Canopus_45_LeftDown.png", new Vector2(-0.22f, -0.08f), new Vector2(1.75f, 1.1f), new Vector2(0.45f, -0.55f), new Vector2(-0.45f, 0.55f));
+            SetDirection(directions.GetArrayElementAtIndex(6), ShipDirection.Backward, "Canopus_bow.png", new Vector2(-0.02f, -0.02f), new Vector2(0f, 1.35f), new Vector2(0.7f, 0f), new Vector2(-0.7f, 0f));
+            SetDirection(directions.GetArrayElementAtIndex(7), ShipDirection.RightBackward, "Canopus_45_RightDown.png", new Vector2(0.22f, -0.08f), new Vector2(-1.75f, 1.1f), new Vector2(0.45f, 0.55f), new Vector2(-0.45f, -0.55f));
             serializedProfile.ApplyModifiedPropertiesWithoutUndo();
 
             return profile;
         }
 
         private static void SetDirection(SerializedProperty property, ShipDirection direction, string spriteName,
-            Vector2 visualOffset, Vector2 bow, Vector2 stern, Vector2 port, Vector2 starboard)
+            Vector2 visualOffset, Vector2 stern, Vector2 port, Vector2 starboard)
         {
             property.FindPropertyRelative("<Direction>k__BackingField").enumValueIndex = (int)direction;
             property.FindPropertyRelative("<Sprite>k__BackingField").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>($"Assets/_game/Content/Canopus/{spriteName}");
             property.FindPropertyRelative("<SubmersionMask>k__BackingField").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Texture2D>($"{MasksPath}/{Path.GetFileNameWithoutExtension(spriteName)}_Mask.png");
             property.FindPropertyRelative("<WaterlineMask>k__BackingField").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Texture2D>($"{WaterlineMasksPath}/{Path.GetFileNameWithoutExtension(spriteName)}_WaterlineV3.png");
             property.FindPropertyRelative("<VisualOffset>k__BackingField").vector2Value = visualOffset;
-            property.FindPropertyRelative("<BowAnchor>k__BackingField").vector2Value = bow;
-            property.FindPropertyRelative("<SternAnchor>k__BackingField").vector2Value = stern;
+            property.FindPropertyRelative("<BowAnchor>k__BackingField").vector2Value = CalculateBowAnchor(spriteName,
+                visualOffset);
+            property.FindPropertyRelative("<SternAnchor>k__BackingField").vector2Value =
+                stern + visualOffset * 0.36f;
             property.FindPropertyRelative("<PortAnchor>k__BackingField").vector2Value = port;
             property.FindPropertyRelative("<StarboardAnchor>k__BackingField").vector2Value = starboard;
             property.FindPropertyRelative("<FoamWidth>k__BackingField").floatValue = 0.1f;
         }
 
+        private static Vector2 CalculateBowAnchor(string spriteName, Vector2 visualOffset)
+        {
+            const float visualScale = 0.36f;
+            const float pixelsPerUnit = 100f;
+            const float edgeDepth = 10f;
+            var maskPath = $"{WaterlineMasksPath}/{Path.GetFileNameWithoutExtension(spriteName)}_WaterlineV3.png";
+            var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            texture.LoadImage(File.ReadAllBytes(maskPath));
+            var pixels = texture.GetPixels32();
+            var direction = GetMaskDirection(spriteName);
+            var center = new Vector2(texture.width * 0.5f, texture.height * 0.5f);
+            var maximumProjection = float.MinValue;
+            for (var i = 0; i < pixels.Length; i++)
+            {
+                if (pixels[i].g <= 24)
+                {
+                    continue;
+                }
+
+                var position = new Vector2(i % texture.width, i / texture.width) - center;
+                maximumProjection = Mathf.Max(maximumProjection, Vector2.Dot(position, direction));
+            }
+
+            var weightedPosition = Vector2.zero;
+            var totalWeight = 0f;
+            for (var i = 0; i < pixels.Length; i++)
+            {
+                var weight = pixels[i].g / 255f;
+                var position = new Vector2(i % texture.width, i / texture.width) - center;
+                if (weight <= 0f || Vector2.Dot(position, direction) < maximumProjection - edgeDepth)
+                {
+                    continue;
+                }
+
+                weightedPosition += position * weight;
+                totalWeight += weight;
+            }
+
+            Object.DestroyImmediate(texture);
+            var localPosition = weightedPosition / totalWeight / pixelsPerUnit + visualOffset;
+
+            return localPosition * visualScale;
+        }
+
         private static void CreateScene(ShipVisualProfile profile, Material hullMaterial, Material waterMaterial,
             Material effectsMaterial, Material sideEffectsMaterial, Material residualEffectsMaterial,
-            Material waterlineMaterial)
+            Material bowEffectsMaterial, Material waterlineMaterial)
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             var camera = CreateCamera();
             var waterView = CreateWater(waterMaterial);
             CreateShip(profile, hullMaterial, effectsMaterial, sideEffectsMaterial, residualEffectsMaterial,
-                waterlineMaterial, out var shipView, out var foamView, out var wakeView);
+                bowEffectsMaterial, waterlineMaterial, out var shipView, out var foamView, out var wakeView);
             var scope = CreateObject<CanopusPrototypeScope>("Prototype Scope");
             scope.Setup(camera, profile, shipView, foamView, wakeView, waterView);
             EditorUtility.SetDirty(scope);
@@ -377,7 +451,8 @@ namespace Game.Editor
         }
 
         private static void CreateShip(ShipVisualProfile profile, Material hullMaterial, Material effectsMaterial,
-            Material sideEffectsMaterial, Material residualEffectsMaterial, Material waterlineMaterial,
+            Material sideEffectsMaterial, Material residualEffectsMaterial, Material bowEffectsMaterial,
+            Material waterlineMaterial,
             out ShipView shipView, out ShipFoamView foamView, out ShipWakeView wakeView)
         {
             shipView = CreateObject<ShipView>("Canopus");
@@ -399,11 +474,13 @@ namespace Game.Editor
             var wakeRenderer = CreateEffectRenderer("Wake Center", effectsMaterial, 5, out var centerMeshFilter);
             CreateEffectRenderer("Wake Sides", sideEffectsMaterial, 4, out var sideMeshFilter);
             CreateEffectRenderer("Wake Residuals", residualEffectsMaterial, 3, out var residualMeshFilter);
+            CreateEffectRenderer("Bow Waves", bowEffectsMaterial, 6, out var bowMeshFilter);
             wakeView = ObjectFactory.AddComponent<ShipWakeView>(wakeRenderer.gameObject);
             var serializedWake = new SerializedObject(wakeView);
             SetReference(serializedWake, "_centerMeshFilter", centerMeshFilter);
             SetReference(serializedWake, "_sideMeshFilter", sideMeshFilter);
             SetReference(serializedWake, "_residualMeshFilter", residualMeshFilter);
+            SetReference(serializedWake, "_bowMeshFilter", bowMeshFilter);
             serializedWake.ApplyModifiedPropertiesWithoutUndo();
         }
 

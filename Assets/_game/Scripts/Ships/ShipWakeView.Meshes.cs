@@ -16,8 +16,10 @@ namespace Game.Ships
             return mesh;
         }
 
-        private void BuildMeshes(Vector2 sternPosition, float normalizedSpeed)
+        private void BuildMeshes(Vector2 bowPosition, Vector2 sternPosition, float hullHalfWidth,
+            float normalizedSpeed)
         {
+            BuildBowMesh(bowPosition, sternPosition, normalizedSpeed);
             var pointCount = _points.Count + 1;
             if (pointCount < 2)
             {
@@ -28,35 +30,74 @@ namespace Game.Ships
                 return;
             }
 
-            var positions = BuildSmoothedPositions(sternPosition);
-            BuildCenterMesh(positions, normalizedSpeed);
-            BuildSideMesh(positions, normalizedSpeed);
+            var wakeOrigin = sternPosition;
+            var forward = (bowPosition - sternPosition).normalized;
+            var exitPosition = sternPosition - forward * 0.2f;
+            var positions = BuildSmoothedPositions(wakeOrigin, exitPosition);
+            BuildCenterDecals(positions, hullHalfWidth, normalizedSpeed);
+            BuildSideDecals(positions, hullHalfWidth, normalizedSpeed);
             BuildResidualMesh(positions);
         }
 
-        private Vector2[] BuildSmoothedPositions(Vector2 sternPosition)
+        private Vector2[] BuildSmoothedPositions(Vector2 sternPosition, Vector2 exitPosition)
         {
             var positions = new Vector2[_points.Count + 1];
             positions[0] = sternPosition;
-            for (var i = 1; i < positions.Length; i++)
+            positions[1] = exitPosition;
+            for (var i = 2; i < positions.Length; i++)
             {
                 positions[i] = _points[i - 1].Position;
             }
 
-            for (var pass = 0; pass < 2; pass++)
+            for (var pass = 0; pass < 4; pass++)
             {
                 var previousPositions = (Vector2[])positions.Clone();
-                for (var i = 1; i < positions.Length - 1; i++)
+                for (var i = 2; i < positions.Length - 1; i++)
                 {
-                    positions[i] = previousPositions[i - 1] * 0.2f + previousPositions[i] * 0.6f +
-                        previousPositions[i + 1] * 0.2f;
+                    positions[i] = previousPositions[i - 1] * 0.25f + previousPositions[i] * 0.5f +
+                        previousPositions[i + 1] * 0.25f;
                 }
             }
 
-            return positions;
+            return BuildCurvedPositions(positions, 3);
         }
 
-        private void BuildCenterMesh(Vector2[] positions, float normalizedSpeed)
+        private static Vector2[] BuildCurvedPositions(Vector2[] controlPoints, int subdivisions)
+        {
+            var curvedPositions = new Vector2[(controlPoints.Length - 1) * subdivisions + 1];
+            var curvedIndex = 0;
+            for (var i = 0; i < controlPoints.Length - 1; i++)
+            {
+                var first = controlPoints[Mathf.Max(0, i - 1)];
+                var second = controlPoints[i];
+                var third = controlPoints[i + 1];
+                var fourth = controlPoints[Mathf.Min(controlPoints.Length - 1, i + 2)];
+                for (var step = 0; step < subdivisions; step++)
+                {
+                    var factor = (float)step / subdivisions;
+                    curvedPositions[curvedIndex++] = i < 2
+                        ? Vector2.Lerp(second, third, factor)
+                        : CalculateCatmullRom(first, second, third, fourth, factor);
+                }
+            }
+
+            curvedPositions[curvedIndex] = controlPoints[^1];
+
+            return curvedPositions;
+        }
+
+        private static Vector2 CalculateCatmullRom(Vector2 first, Vector2 second, Vector2 third, Vector2 fourth,
+            float factor)
+        {
+            var squaredFactor = factor * factor;
+            var cubedFactor = squaredFactor * factor;
+
+            return 0.5f * (2f * second + (third - first) * factor +
+                (2f * first - 5f * second + 4f * third - fourth) * squaredFactor +
+                (-first + 3f * second - 3f * third + fourth) * cubedFactor);
+        }
+
+        private void BuildCenterMesh(Vector2[] positions, float hullHalfWidth, float normalizedSpeed)
         {
             var vertices = new Vector3[positions.Length * 2];
             var uv = new Vector2[vertices.Length];
@@ -70,16 +111,20 @@ namespace Game.Ships
                     accumulatedLength += Vector2.Distance(positions[i - 1], positions[i]);
                 }
 
-                GetFrame(positions, i, out var normal);
+                GetRibbonJoin(positions, i, out var normal, out var joinScale);
                 var tailFactor = (float)i / (positions.Length - 1);
-                var intensity = GetIntensity(i, normalizedSpeed);
+                var intensity = GetIntensity(i, positions.Length, normalizedSpeed);
                 var headFactor = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(accumulatedLength / _headBlendDistance));
-                var width = Mathf.Lerp(_baseWidth * Mathf.Lerp(0.9f, 2.2f, intensity), _baseWidth * 0.08f,
-                    Mathf.Pow(tailFactor, 0.68f)) * Mathf.Lerp(0.06f, 1f, headFactor);
-                var alpha = GetAlpha(i, tailFactor, intensity);
+                var trailWidth = Mathf.Lerp(_baseWidth * Mathf.Lerp(0.28f, 0.48f, intensity),
+                    _baseWidth * 0.045f, Mathf.Pow(tailFactor, 0.72f));
+                var sternWidth = Mathf.Lerp(hullHalfWidth * 0.2f, trailWidth, headFactor);
+                var width = Mathf.Lerp(sternWidth, trailWidth, headFactor);
+                var alpha = GetAlpha(i, positions.Length, tailFactor, intensity);
+                alpha *= Mathf.Lerp(0.15f, 1f, Mathf.SmoothStep(0f, 1f,
+                    Mathf.InverseLerp(0f, 0.35f, accumulatedLength)));
                 var vertexIndex = i * 2;
-                vertices[vertexIndex] = positions[i] - normal * width;
-                vertices[vertexIndex + 1] = positions[i] + normal * width;
+                vertices[vertexIndex] = positions[i] - normal * width * joinScale;
+                vertices[vertexIndex + 1] = positions[i] + normal * width * joinScale;
                 uv[vertexIndex] = new Vector2(accumulatedLength * 0.42f, 0f);
                 uv[vertexIndex + 1] = new Vector2(accumulatedLength * 0.42f, 1f);
                 colors[vertexIndex] = new Color(1f, 1f, 1f, alpha);
@@ -90,7 +135,7 @@ namespace Game.Ships
             ApplyMesh(_centerMesh, vertices, uv, colors, triangles);
         }
 
-        private void BuildSideMesh(Vector2[] positions, float normalizedSpeed)
+        private void BuildSideMesh(Vector2[] positions, float hullHalfWidth, float normalizedSpeed)
         {
             var vertices = new Vector3[positions.Length * 4];
             var uv = new Vector2[vertices.Length];
@@ -104,21 +149,24 @@ namespace Game.Ships
                     accumulatedLength += Vector2.Distance(positions[i - 1], positions[i]);
                 }
 
-                GetFrame(positions, i, out var normal);
+                GetRibbonJoin(positions, i, out var normal, out var joinScale);
                 var tailFactor = (float)i / (positions.Length - 1);
-                var intensity = GetIntensity(i, normalizedSpeed);
+                var intensity = GetIntensity(i, positions.Length, normalizedSpeed);
                 var headFactor = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(accumulatedLength / _headBlendDistance));
-                var offset = _baseWidth * Mathf.Lerp(0.12f,
-                    Mathf.Lerp(1.5f, 4.2f, Mathf.Pow(tailFactor, 0.72f)), headFactor);
-                var stripWidth = _baseWidth * Mathf.Lerp(0.03f,
-                    Mathf.Lerp(0.25f, 0.08f, tailFactor), headFactor);
-                var alpha = GetAlpha(i, tailFactor, intensity) * Mathf.Lerp(0.18f,
-                    Mathf.Lerp(0.48f, 0.14f, tailFactor), headFactor);
+                var sideOffset = Mathf.Lerp(hullHalfWidth * 0.72f,
+                    _baseWidth * Mathf.Lerp(1.55f, 3.15f, Mathf.Pow(tailFactor, 0.76f)), headFactor);
+                var middleFactor = Mathf.Sin(Mathf.Clamp01(tailFactor) * Mathf.PI);
+                var stripWidth = Mathf.Lerp(_baseWidth * 0.04f,
+                    _baseWidth * Mathf.Lerp(0.45f, 0.86f, middleFactor), headFactor);
+                stripWidth *= Mathf.Lerp(1f, 0.42f, tailFactor);
+                var alpha = GetAlpha(i, positions.Length, tailFactor, intensity) * Mathf.Lerp(0.08f,
+                    Mathf.Lerp(0.92f, 0.3f, tailFactor), headFactor);
+                alpha *= Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.08f, 0.55f, accumulatedLength));
                 var vertexIndex = i * 4;
-                SetStrip(vertices, uv, colors, vertexIndex, positions[i] - normal * offset, normal,
-                    stripWidth, accumulatedLength, alpha);
-                SetStrip(vertices, uv, colors, vertexIndex + 2, positions[i] + normal * offset, normal,
-                    stripWidth, accumulatedLength, alpha);
+                SetStrip(vertices, uv, colors, vertexIndex, positions[i] - normal * sideOffset * joinScale,
+                    normal, stripWidth * joinScale, accumulatedLength, alpha);
+                SetStrip(vertices, uv, colors, vertexIndex + 2, positions[i] + normal * sideOffset * joinScale,
+                    normal, stripWidth * joinScale, accumulatedLength, alpha);
 
                 if (i >= positions.Length - 1)
                 {
@@ -157,8 +205,9 @@ namespace Game.Ships
                 uv[vertexIndex + 1] = Vector2.right;
                 uv[vertexIndex + 2] = Vector2.up;
                 uv[vertexIndex + 3] = Vector2.one;
-                var alpha = GetAlpha(pointIndex, (float)pointIndex / positions.Length,
-                    _points[pointIndex - 1].Intensity) * 0.38f;
+                var intensity = GetIntensity(pointIndex, positions.Length, 0f);
+                var alpha = GetAlpha(pointIndex, positions.Length, (float)pointIndex / positions.Length,
+                    intensity) * 0.38f;
                 for (var colorIndex = 0; colorIndex < 4; colorIndex++)
                 {
                     colors[vertexIndex + colorIndex] = new Color(1f, 1f, 1f, alpha);

@@ -16,7 +16,6 @@ Shader "Game/WaterInteraction"
         Blend SrcAlpha OneMinusSrcAlpha
         Cull Off
         ZWrite Off
-
         Pass
         {
             HLSLPROGRAM

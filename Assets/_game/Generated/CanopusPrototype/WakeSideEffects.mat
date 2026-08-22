@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: WakeSideEffects
-  m_Shader: {fileID: 4800000, guid: a674545cb2cc54749939461c71790247, type: 3}
+  m_Shader: {fileID: 4800000, guid: 5c5eb42db6b4c98409535359d44e307b, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -27,14 +27,27 @@ Material:
         m_Texture: {fileID: 2800000, guid: 7a728ef3dd68a124b97c53a2685a9b12, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _WakeTex:
+        m_Texture: {fileID: 2800000, guid: 81f1e9cc03bf2c44fac76aa483f126b9, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _WakeTexA:
+        m_Texture: {fileID: 2800000, guid: 81f1e9cc03bf2c44fac76aa483f126b9, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _WakeTexB:
+        m_Texture: {fileID: 2800000, guid: 81f1e9cc03bf2c44fac76aa483f126b9, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _AlphaPower: 1.2
     - _EdgeSoftness: 0.2
-    - _FlowSpeed: 0.035
-    - _TextureSoftness: 0.15
-    - _TextureThreshold: 0.64
+    - _FlowSpeed: 0.006
+    - _TextureSoftness: 0.16
+    - _TextureThreshold: 0.58
     m_Colors:
     - _TextureScale: {r: 0.75, g: 1.4, b: 0, a: 0}
-    - _Tint: {r: 0.92, g: 0.985, b: 1, a: 0.42}
+    - _Tint: {r: 0.92, g: 0.985, b: 1, a: 0.78}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

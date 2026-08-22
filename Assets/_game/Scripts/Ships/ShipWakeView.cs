@@ -15,6 +15,9 @@ namespace Game.Ships
         private MeshFilter _residualMeshFilter;
 
         [SerializeField]
+        private MeshFilter _bowMeshFilter;
+
+        [SerializeField]
         private int _maximumPoints = 128;
 
         [SerializeField]
@@ -30,12 +33,13 @@ namespace Game.Ships
         private float _headBlendDistance = 0.85f;
 
         [SerializeField]
-        private float _lifetime = 8f;
+        private float _lifetime = 5f;
 
         private readonly List<WakePoint> _points = new();
         private Mesh _centerMesh;
         private Mesh _sideMesh;
         private Mesh _residualMesh;
+        private Mesh _bowMesh;
         private Vector2 _previousSternPosition;
         private float _distanceSinceLastPoint;
         private bool _hasPreviousPosition;
@@ -45,9 +49,11 @@ namespace Game.Ships
             _centerMesh = CreateMesh("Ship Wake Center", _centerMeshFilter);
             _sideMesh = CreateMesh("Ship Wake Sides", _sideMeshFilter);
             _residualMesh = CreateMesh("Ship Wake Residuals", _residualMeshFilter);
+            _bowMesh = CreateMesh("Ship Bow Waves", _bowMeshFilter);
         }
 
-        public void Tick(Vector2 sternPosition, float normalizedSpeed, float deltaTime)
+        public void Tick(Vector2 bowPosition, Vector2 sternPosition, Vector2 portPosition, Vector2 starboardPosition,
+            float normalizedSpeed, float deltaTime)
         {
             AgePoints(deltaTime);
             if (!_hasPreviousPosition)
@@ -62,7 +68,8 @@ namespace Game.Ships
             }
 
             _previousSternPosition = sternPosition;
-            BuildMeshes(sternPosition, normalizedSpeed);
+            var hullHalfWidth = Vector2.Distance(portPosition, starboardPosition) * 0.5f;
+            BuildMeshes(bowPosition, sternPosition, hullHalfWidth, normalizedSpeed);
         }
 
         private void AddDistanceSamples(Vector2 from, Vector2 to, float normalizedSpeed)
