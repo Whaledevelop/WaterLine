@@ -11,48 +11,34 @@ namespace Game.Ships
         private SpriteRenderer _primaryRenderer;
 
         [SerializeField]
-        private SpriteRenderer _secondaryRenderer;
-
         private MaterialPropertyBlock _propertyBlock;
-        private SpriteRenderer _activeRenderer;
-        private SpriteRenderer _fadingRenderer;
         private ShipVisualProfile _profile;
-        private float _fadeProgress;
+        private int _directionIndex = -1;
 
-        public void Initialize(ShipVisualProfile profile, int directionIndex)
+        public void Initialize(ShipVisualProfile profile, ShipVisualPose pose)
         {
             _propertyBlock = new MaterialPropertyBlock();
             _profile = profile;
-            _activeRenderer = _primaryRenderer;
-            _fadingRenderer = _secondaryRenderer;
-            ApplyVisual(_activeRenderer, profile.GetVisual(directionIndex));
-            SetAlpha(_activeRenderer, 1f);
-            SetAlpha(_fadingRenderer, 0f);
             transform.localScale = Vector3.one * profile.VisualScale;
+            ApplyPose(pose);
         }
 
-        public void SetDirection(int directionIndex)
+        public void Tick(ShipVisualPose pose)
         {
-            var previousRenderer = _activeRenderer;
-            _activeRenderer = _fadingRenderer;
-            _fadingRenderer = previousRenderer;
-            ApplyVisual(_activeRenderer, _profile.GetVisual(directionIndex));
-            SetAlpha(_activeRenderer, 0f);
-            SetAlpha(_fadingRenderer, 1f);
-            _fadeProgress = 0f;
+            transform.position = new Vector3(pose.Center.x, pose.Center.y, transform.position.z);
+            ApplyPose(pose);
         }
 
-        public void Tick(Vector2 position, float deltaTime)
+        private void ApplyPose(ShipVisualPose pose)
         {
-            transform.position = new Vector3(position.x, position.y, transform.position.z);
-            if (_fadeProgress >= 1f)
+            if (_directionIndex == pose.DirectionIndex)
             {
                 return;
             }
 
-            _fadeProgress = Mathf.Clamp01(_fadeProgress + deltaTime / _profile.CrossfadeDuration);
-            SetAlpha(_activeRenderer, _fadeProgress);
-            SetAlpha(_fadingRenderer, 1f - _fadeProgress);
+            _directionIndex = pose.DirectionIndex;
+            ApplyVisual(_primaryRenderer, _profile.GetVisual(_directionIndex));
+            SetAlpha(_primaryRenderer, 1f);
         }
 
         private void ApplyVisual(SpriteRenderer spriteRenderer, ShipDirectionVisual visual)

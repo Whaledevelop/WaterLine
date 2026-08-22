@@ -5,7 +5,8 @@ namespace Game.Ships
 {
     public sealed partial class ShipWakeView
     {
-        private void BuildCenterDecals(Vector2[] positions, float hullHalfWidth, float normalizedSpeed)
+        private void BuildCenterDecals(List<WakePathPoint> path, float hullHalfWidth, float normalizedSpeed,
+            float alphaMultiplier, Mesh mesh)
         {
             var vertices = new List<Vector3>();
             var uv = new List<Vector2>();
@@ -15,11 +16,11 @@ namespace Game.Ships
             var accumulatedLength = 0f;
             var nextDecalDistance = 0f;
             var decalIndex = 0;
-            for (var i = 0; i < positions.Length; i++)
+            for (var i = 0; i < path.Count; i++)
             {
                 if (i > 0)
                 {
-                    accumulatedLength += Vector2.Distance(positions[i - 1], positions[i]);
+                    accumulatedLength += Vector2.Distance(path[i - 1].Position, path[i].Position);
                 }
 
                 if (accumulatedLength < nextDecalDistance)
@@ -27,95 +28,104 @@ namespace Game.Ships
                     continue;
                 }
 
-                GetDecalFrame(positions, i, out var tangent, out var normal);
-                var tailFactor = (float)i / (positions.Length - 1);
-                var intensity = GetIntensity(i, positions.Length, normalizedSpeed);
-                var alpha = GetAlpha(i, positions.Length, tailFactor, intensity);
+                GetFrame(path, i, out var tangent, out var normal);
+                var tailFactor = (float)i / (path.Count - 1);
+                var intensity = i == 0 ? normalizedSpeed : path[i].Intensity;
+                var alpha = GetAlpha(path[i], tailFactor, alphaMultiplier);
                 alpha *= Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0f, 0.28f, accumulatedLength));
                 var halfLength = Mathf.Lerp(0.78f, 1.05f, intensity);
-                var halfWidth = Mathf.Lerp(hullHalfWidth * 0.28f, _baseWidth * 0.56f,
+                var halfWidth = Mathf.Lerp(hullHalfWidth * 0.28f, _centerWakeWidth * 0.5f,
                     Mathf.Clamp01(accumulatedLength / 0.75f));
-                AddDecal(vertices, uv, variants, colors, triangles, positions[i], tangent, normal, halfLength,
-                    halfWidth, alpha, decalIndex % 2, false);
+                AddDecal(vertices, uv, variants, colors, triangles, path[i].Position, tangent, normal, halfLength,
+                    halfWidth, alpha, decalIndex % 2);
                 nextDecalDistance = accumulatedLength + halfLength * 0.24f;
                 decalIndex++;
             }
 
-            ApplyDecalMesh(_centerMesh, vertices, uv, variants, colors, triangles);
+            ApplyDecalMesh(mesh, vertices, uv, variants, colors, triangles);
         }
 
-        private void BuildSideDecals(Vector2[] positions, float hullHalfWidth, float normalizedSpeed)
+        private void BuildSideRibbon(List<WakePathPoint> path, float hullHalfWidth, float normalizedSpeed,
+            float alphaMultiplier, Mesh mesh)
         {
-            var pathPointCount = positions.Length;
-            var leftPositions = new Vector2[pathPointCount];
-            var rightPositions = new Vector2[pathPointCount];
-            var accumulatedLengths = new float[pathPointCount];
+            var pointCount = path.Count;
+            var leftPositions = new Vector2[pointCount];
+            var rightPositions = new Vector2[pointCount];
+            var accumulatedLengths = new float[pointCount];
             var accumulatedLength = 0f;
-            for (var i = 0; i < pathPointCount; i++)
+            for (var i = 0; i < pointCount; i++)
             {
                 if (i > 0)
                 {
-                    accumulatedLength += Vector2.Distance(positions[i - 1], positions[i]);
+                    accumulatedLength += Vector2.Distance(path[i - 1].Position, path[i].Position);
                 }
 
-                GetDecalFrame(positions, i, out var tangent, out var normal);
-                var tailFactor = (float)i / (pathPointCount - 1);
+                GetFrame(path, i, out _, out var normal);
+                var tailFactor = (float)i / (pointCount - 1);
                 var spread = Mathf.Lerp(hullHalfWidth * 0.82f, _baseWidth * 2.7f,
                     Mathf.Pow(tailFactor, 0.7f));
-                leftPositions[i] = positions[i] - normal * spread;
-                rightPositions[i] = positions[i] + normal * spread;
+                leftPositions[i] = path[i].Position - normal * spread;
+                rightPositions[i] = path[i].Position + normal * spread;
                 accumulatedLengths[i] = accumulatedLength;
             }
 
-            BuildSideRibbonMesh(leftPositions, rightPositions, accumulatedLengths, normalizedSpeed);
-        }
-
-        private void BuildSideRibbonMesh(Vector2[] leftPositions, Vector2[] rightPositions,
-            float[] accumulatedLengths, float normalizedSpeed)
-        {
-            var pathPointCount = leftPositions.Length;
-            var vertices = new Vector3[pathPointCount * 4];
+            var vertices = new Vector3[pointCount * 4];
             var uv = new Vector2[vertices.Length];
             var colors = new Color[vertices.Length];
-            var triangles = new int[(pathPointCount - 1) * 12];
-            for (var i = 0; i < pathPointCount; i++)
+            var triangles = new int[(pointCount - 1) * 12];
+            for (var i = 0; i < pointCount; i++)
             {
-                var tailFactor = (float)i / (pathPointCount - 1);
-                var intensity = GetIntensity(i, pathPointCount, normalizedSpeed);
-                var alpha = GetAlpha(i, pathPointCount, tailFactor, intensity) * 0.82f;
-                alpha *= Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.1f, 0.5f, accumulatedLengths[i]));
+                var tailFactor = (float)i / (pointCount - 1);
+                var intensity = i == 0 ? normalizedSpeed : path[i].Intensity;
+                var alpha = GetAlpha(path[i], tailFactor, alphaMultiplier) * 0.82f;
+                alpha *= Mathf.SmoothStep(0f, 1f,
+                    Mathf.InverseLerp(0.1f, _headBlendDistance, accumulatedLengths[i]));
                 var halfWidth = Mathf.Lerp(0.16f, 0.27f, intensity);
                 GetRibbonJoin(leftPositions, i, out var leftNormal, out var leftScale);
                 GetRibbonJoin(rightPositions, i, out var rightNormal, out var rightScale);
                 SetStrip(vertices, uv, colors, i * 2, leftPositions[i], leftNormal, halfWidth * leftScale,
                     accumulatedLengths[i], alpha);
-                var rightVertexIndex = pathPointCount * 2 + i * 2;
+                var rightVertexIndex = pointCount * 2 + i * 2;
                 SetStrip(vertices, uv, colors, rightVertexIndex, rightPositions[i], rightNormal,
                     halfWidth * rightScale, accumulatedLengths[i], alpha);
-                if (i >= pathPointCount - 1)
+                if (i >= pointCount - 1)
                 {
                     continue;
                 }
 
                 SetStripTriangles(triangles, i * 6, i * 2, (i + 1) * 2);
-                SetStripTriangles(triangles, (pathPointCount - 1) * 6 + i * 6, rightVertexIndex,
+                SetStripTriangles(triangles, (pointCount - 1) * 6 + i * 6, rightVertexIndex,
                     rightVertexIndex + 2);
             }
 
-            ApplyMesh(_sideMesh, vertices, uv, colors, triangles);
+            ApplyMesh(mesh, vertices, uv, colors, triangles);
         }
 
-        private static void GetDecalFrame(Vector2[] positions, int index, out Vector2 tangent, out Vector2 normal)
+        private void BuildResidualDecals(List<WakePathPoint> path, float alphaMultiplier, Mesh mesh)
         {
-            var previous = positions[Mathf.Max(0, index - 1)];
-            var next = positions[Mathf.Min(positions.Length - 1, index + 1)];
-            tangent = (next - previous).normalized;
-            normal = new Vector2(-tangent.y, tangent.x);
+            var decalCount = Mathf.Min((path.Count - 1) / 21, 14);
+            var vertices = new List<Vector3>(decalCount * 4);
+            var uv = new List<Vector2>(decalCount * 4);
+            var variants = new List<Vector2>(decalCount * 4);
+            var colors = new List<Color>(decalCount * 4);
+            var triangles = new List<int>(decalCount * 6);
+            for (var decalIndex = 0; decalIndex < decalCount; decalIndex++)
+            {
+                var pointIndex = Mathf.Min(12 + decalIndex * 21, path.Count - 2);
+                GetFrame(path, pointIndex, out var tangent, out var normal);
+                var random = Mathf.Repeat(decalIndex * 0.618f, 1f);
+                var center = path[pointIndex].Position + normal * Mathf.Lerp(-0.55f, 0.55f, random);
+                var alpha = GetAlpha(path[pointIndex], (float)pointIndex / path.Count, alphaMultiplier) * 0.3f;
+                AddDecal(vertices, uv, variants, colors, triangles, center, tangent, normal,
+                    Mathf.Lerp(0.35f, 0.7f, 1f - random), Mathf.Lerp(0.16f, 0.34f, random), alpha, 0);
+            }
+
+            ApplyDecalMesh(mesh, vertices, uv, variants, colors, triangles);
         }
 
         private static void AddDecal(List<Vector3> vertices, List<Vector2> uv, List<Vector2> variants,
             List<Color> colors, List<int> triangles, Vector2 center, Vector2 tangent, Vector2 normal,
-            float halfLength, float halfWidth, float alpha, int variant, bool mirror)
+            float halfLength, float halfWidth, float alpha, int variant)
         {
             var tail = center + tangent * halfLength;
             var head = center - tangent * halfLength;
@@ -124,10 +134,10 @@ namespace Game.Ships
             vertices.Add(tail + normal * halfWidth);
             vertices.Add(head - normal * halfWidth);
             vertices.Add(head + normal * halfWidth);
-            uv.Add(new Vector2(0f, mirror ? 1f : 0f));
-            uv.Add(new Vector2(0f, mirror ? 0f : 1f));
-            uv.Add(new Vector2(1f, mirror ? 1f : 0f));
-            uv.Add(new Vector2(1f, mirror ? 0f : 1f));
+            uv.Add(Vector2.zero);
+            uv.Add(Vector2.up);
+            uv.Add(Vector2.right);
+            uv.Add(Vector2.one);
             var variantUv = new Vector2(variant, 0f);
             var color = new Color(1f, 1f, 1f, alpha);
             for (var i = 0; i < 4; i++)
@@ -142,6 +152,17 @@ namespace Game.Ships
             triangles.Add(vertexIndex);
             triangles.Add(vertexIndex + 2);
             triangles.Add(vertexIndex + 3);
+        }
+
+        private static void SetStrip(Vector3[] vertices, Vector2[] uv, Color[] colors, int vertexIndex,
+            Vector2 center, Vector2 normal, float halfWidth, float accumulatedLength, float alpha)
+        {
+            vertices[vertexIndex] = center - normal * halfWidth;
+            vertices[vertexIndex + 1] = center + normal * halfWidth;
+            uv[vertexIndex] = new Vector2(accumulatedLength * 0.3f, 0f);
+            uv[vertexIndex + 1] = new Vector2(accumulatedLength * 0.3f, 1f);
+            colors[vertexIndex] = new Color(1f, 1f, 1f, alpha);
+            colors[vertexIndex + 1] = new Color(1f, 1f, 1f, alpha);
         }
 
         private static void ApplyDecalMesh(Mesh mesh, List<Vector3> vertices, List<Vector2> uv,

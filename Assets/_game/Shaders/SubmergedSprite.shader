@@ -62,7 +62,6 @@ Shader "Game/SubmergedSprite"
             {
                 half4 color = CommonUnlitFragment(input, input.color);
                 half mask = SAMPLE_TEXTURE2D(_SubmersionMask, sampler_SubmersionMask, input.uv).r;
-                color.a *= 1 - mask * _UseSubmersionMask;
                 color.a *= lerp(1.0, _UnderwaterAlphaMultiplier, mask * _UseSubmersionMask);
 
                 return color;

@@ -1,222 +1,161 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Game.Ships
 {
     public sealed partial class ShipWakeView
     {
-        private static Mesh CreateMesh(string name, MeshFilter meshFilter)
+        private void BuildWakeMeshes(ShipVisualPose pose, float normalizedSpeed)
         {
-            var mesh = new Mesh
-            {
-                name = name
-            };
-            mesh.MarkDynamic();
-            meshFilter.sharedMesh = mesh;
-
-            return mesh;
+            var activePath = BuildActivePath(pose.Stern, normalizedSpeed);
+            BuildPathMeshes(activePath, pose.HullHalfWidth, normalizedSpeed, 1f, _centerMesh, _sideMesh,
+                _residualMesh);
         }
 
-        private void BuildMeshes(Vector2 bowPosition, Vector2 sternPosition, float hullHalfWidth,
-            float normalizedSpeed)
+        private List<WakePathPoint> BuildActivePath(Vector2 stern, float normalizedSpeed)
         {
-            BuildBowMesh(bowPosition, sternPosition, normalizedSpeed);
-            var pointCount = _points.Count + 1;
-            if (pointCount < 2)
+            var currentPath = BuildSegmentPath(_history.Current);
+            currentPath.Insert(0, new WakePathPoint(stern, normalizedSpeed, 0f));
+
+            return SmoothPath(currentPath);
+        }
+
+        private static List<WakePathPoint> BuildSegmentPath(WakeSegment segment)
+        {
+            var path = new List<WakePathPoint>();
+            if (segment == null)
             {
-                _centerMesh.Clear();
-                _sideMesh.Clear();
-                _residualMesh.Clear();
+                return path;
+            }
+
+            foreach (var sample in segment.Samples)
+            {
+                path.Add(new WakePathPoint(sample.Position, sample.Intensity, sample.Age));
+            }
+
+            return path;
+        }
+
+        private static List<WakePathPoint> SmoothPath(List<WakePathPoint> path)
+        {
+            if (path.Count < 3)
+            {
+                return path;
+            }
+
+            var smoothed = new List<WakePathPoint>(path);
+            for (var pass = 0; pass < 2; pass++)
+            {
+                var source = smoothed.ToArray();
+                for (var i = 1; i < smoothed.Count - 1; i++)
+                {
+                    var position = source[i - 1].Position * 0.25f + source[i].Position * 0.5f +
+                        source[i + 1].Position * 0.25f;
+                    smoothed[i] = source[i].WithPosition(position);
+                }
+            }
+
+            var curved = new List<WakePathPoint>((smoothed.Count - 1) * 3 + 1);
+            for (var i = 0; i < smoothed.Count - 1; i++)
+            {
+                for (var step = 0; step < 3; step++)
+                {
+                    var factor = step / 3f;
+                    curved.Add(WakePathPoint.Lerp(smoothed[i], smoothed[i + 1], factor));
+                }
+            }
+
+            curved.Add(smoothed[^1]);
+
+            return curved;
+        }
+
+        private void BuildPathMeshes(List<WakePathPoint> path, float hullHalfWidth, float normalizedSpeed,
+            float alphaMultiplier, Mesh centerMesh, Mesh sideMesh, Mesh residualMesh)
+        {
+            if (path.Count < 2 || alphaMultiplier <= 0f)
+            {
+                centerMesh.Clear();
+                sideMesh.Clear();
+                residualMesh.Clear();
 
                 return;
             }
 
-            var wakeOrigin = sternPosition;
-            var forward = (bowPosition - sternPosition).normalized;
-            var exitPosition = sternPosition - forward * 0.2f;
-            var positions = BuildSmoothedPositions(wakeOrigin, exitPosition);
-            BuildCenterDecals(positions, hullHalfWidth, normalizedSpeed);
-            BuildSideDecals(positions, hullHalfWidth, normalizedSpeed);
-            BuildResidualMesh(positions);
+            BuildCenterDecals(path, hullHalfWidth, normalizedSpeed, alphaMultiplier, centerMesh);
+            BuildSideRibbon(path, hullHalfWidth, normalizedSpeed, alphaMultiplier, sideMesh);
+            BuildResidualDecals(path, alphaMultiplier, residualMesh);
         }
 
-        private Vector2[] BuildSmoothedPositions(Vector2 sternPosition, Vector2 exitPosition)
+        private float GetAlpha(WakePathPoint point, float tailFactor, float alphaMultiplier)
         {
-            var positions = new Vector2[_points.Count + 1];
-            positions[0] = sternPosition;
-            positions[1] = exitPosition;
-            for (var i = 2; i < positions.Length; i++)
-            {
-                positions[i] = _points[i - 1].Position;
-            }
+            var lifeFactor = 1f - Mathf.Clamp01(point.Age / _lifetime);
 
-            for (var pass = 0; pass < 4; pass++)
-            {
-                var previousPositions = (Vector2[])positions.Clone();
-                for (var i = 2; i < positions.Length - 1; i++)
-                {
-                    positions[i] = previousPositions[i - 1] * 0.25f + previousPositions[i] * 0.5f +
-                        previousPositions[i + 1] * 0.25f;
-                }
-            }
-
-            return BuildCurvedPositions(positions, 3);
+            return lifeFactor * lifeFactor * Mathf.Lerp(0.08f, 1f, 1f - tailFactor) *
+                Mathf.Lerp(0.45f, 1f, point.Intensity) * alphaMultiplier;
         }
 
-        private static Vector2[] BuildCurvedPositions(Vector2[] controlPoints, int subdivisions)
+        private static void GetFrame(List<WakePathPoint> path, int index, out Vector2 tangent, out Vector2 normal)
         {
-            var curvedPositions = new Vector2[(controlPoints.Length - 1) * subdivisions + 1];
-            var curvedIndex = 0;
-            for (var i = 0; i < controlPoints.Length - 1; i++)
-            {
-                var first = controlPoints[Mathf.Max(0, i - 1)];
-                var second = controlPoints[i];
-                var third = controlPoints[i + 1];
-                var fourth = controlPoints[Mathf.Min(controlPoints.Length - 1, i + 2)];
-                for (var step = 0; step < subdivisions; step++)
-                {
-                    var factor = (float)step / subdivisions;
-                    curvedPositions[curvedIndex++] = i < 2
-                        ? Vector2.Lerp(second, third, factor)
-                        : CalculateCatmullRom(first, second, third, fourth, factor);
-                }
-            }
-
-            curvedPositions[curvedIndex] = controlPoints[^1];
-
-            return curvedPositions;
+            var previous = path[Mathf.Max(0, index - 1)].Position;
+            var next = path[Mathf.Min(path.Count - 1, index + 1)].Position;
+            tangent = (next - previous).normalized;
+            normal = new Vector2(-tangent.y, tangent.x);
         }
 
-        private static Vector2 CalculateCatmullRom(Vector2 first, Vector2 second, Vector2 third, Vector2 fourth,
-            float factor)
+        private static void GetRibbonJoin(Vector2[] positions, int index, out Vector2 normal, out float scale)
         {
-            var squaredFactor = factor * factor;
-            var cubedFactor = squaredFactor * factor;
-
-            return 0.5f * (2f * second + (third - first) * factor +
-                (2f * first - 5f * second + 4f * third - fourth) * squaredFactor +
-                (-first + 3f * second - 3f * third + fourth) * cubedFactor);
-        }
-
-        private void BuildCenterMesh(Vector2[] positions, float hullHalfWidth, float normalizedSpeed)
-        {
-            var vertices = new Vector3[positions.Length * 2];
-            var uv = new Vector2[vertices.Length];
-            var colors = new Color[vertices.Length];
-            var triangles = new int[(positions.Length - 1) * 6];
-            var accumulatedLength = 0f;
-            for (var i = 0; i < positions.Length; i++)
+            var previousIndex = Mathf.Max(0, index - 1);
+            var nextIndex = Mathf.Min(positions.Length - 1, index + 1);
+            var incoming = (positions[index] - positions[previousIndex]).normalized;
+            var outgoing = (positions[nextIndex] - positions[index]).normalized;
+            if (index == 0)
             {
-                if (i > 0)
-                {
-                    accumulatedLength += Vector2.Distance(positions[i - 1], positions[i]);
-                }
-
-                GetRibbonJoin(positions, i, out var normal, out var joinScale);
-                var tailFactor = (float)i / (positions.Length - 1);
-                var intensity = GetIntensity(i, positions.Length, normalizedSpeed);
-                var headFactor = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(accumulatedLength / _headBlendDistance));
-                var trailWidth = Mathf.Lerp(_baseWidth * Mathf.Lerp(0.28f, 0.48f, intensity),
-                    _baseWidth * 0.045f, Mathf.Pow(tailFactor, 0.72f));
-                var sternWidth = Mathf.Lerp(hullHalfWidth * 0.2f, trailWidth, headFactor);
-                var width = Mathf.Lerp(sternWidth, trailWidth, headFactor);
-                var alpha = GetAlpha(i, positions.Length, tailFactor, intensity);
-                alpha *= Mathf.Lerp(0.15f, 1f, Mathf.SmoothStep(0f, 1f,
-                    Mathf.InverseLerp(0f, 0.35f, accumulatedLength)));
-                var vertexIndex = i * 2;
-                vertices[vertexIndex] = positions[i] - normal * width * joinScale;
-                vertices[vertexIndex + 1] = positions[i] + normal * width * joinScale;
-                uv[vertexIndex] = new Vector2(accumulatedLength * 0.42f, 0f);
-                uv[vertexIndex + 1] = new Vector2(accumulatedLength * 0.42f, 1f);
-                colors[vertexIndex] = new Color(1f, 1f, 1f, alpha);
-                colors[vertexIndex + 1] = new Color(1f, 1f, 1f, alpha);
-                SetQuadTriangles(triangles, i, vertexIndex);
+                incoming = outgoing;
+            }
+            else if (index == positions.Length - 1)
+            {
+                outgoing = incoming;
             }
 
-            ApplyMesh(_centerMesh, vertices, uv, colors, triangles);
-        }
-
-        private void BuildSideMesh(Vector2[] positions, float hullHalfWidth, float normalizedSpeed)
-        {
-            var vertices = new Vector3[positions.Length * 4];
-            var uv = new Vector2[vertices.Length];
-            var colors = new Color[vertices.Length];
-            var triangles = new int[(positions.Length - 1) * 12];
-            var accumulatedLength = 0f;
-            for (var i = 0; i < positions.Length; i++)
+            if (Vector2.Dot(incoming, outgoing) < -0.35f)
             {
-                if (i > 0)
-                {
-                    accumulatedLength += Vector2.Distance(positions[i - 1], positions[i]);
-                }
+                normal = new Vector2(-outgoing.y, outgoing.x);
+                scale = 1f;
 
-                GetRibbonJoin(positions, i, out var normal, out var joinScale);
-                var tailFactor = (float)i / (positions.Length - 1);
-                var intensity = GetIntensity(i, positions.Length, normalizedSpeed);
-                var headFactor = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(accumulatedLength / _headBlendDistance));
-                var sideOffset = Mathf.Lerp(hullHalfWidth * 0.72f,
-                    _baseWidth * Mathf.Lerp(1.55f, 3.15f, Mathf.Pow(tailFactor, 0.76f)), headFactor);
-                var middleFactor = Mathf.Sin(Mathf.Clamp01(tailFactor) * Mathf.PI);
-                var stripWidth = Mathf.Lerp(_baseWidth * 0.04f,
-                    _baseWidth * Mathf.Lerp(0.45f, 0.86f, middleFactor), headFactor);
-                stripWidth *= Mathf.Lerp(1f, 0.42f, tailFactor);
-                var alpha = GetAlpha(i, positions.Length, tailFactor, intensity) * Mathf.Lerp(0.08f,
-                    Mathf.Lerp(0.92f, 0.3f, tailFactor), headFactor);
-                alpha *= Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.08f, 0.55f, accumulatedLength));
-                var vertexIndex = i * 4;
-                SetStrip(vertices, uv, colors, vertexIndex, positions[i] - normal * sideOffset * joinScale,
-                    normal, stripWidth * joinScale, accumulatedLength, alpha);
-                SetStrip(vertices, uv, colors, vertexIndex + 2, positions[i] + normal * sideOffset * joinScale,
-                    normal, stripWidth * joinScale, accumulatedLength, alpha);
-
-                if (i >= positions.Length - 1)
-                {
-                    continue;
-                }
-
-                SetStripTriangles(triangles, i * 12, vertexIndex, vertexIndex + 4);
-                SetStripTriangles(triangles, i * 12 + 6, vertexIndex + 2, vertexIndex + 6);
+                return;
             }
 
-            ApplyMesh(_sideMesh, vertices, uv, colors, triangles);
+            var incomingNormal = new Vector2(-incoming.y, incoming.x);
+            var outgoingNormal = new Vector2(-outgoing.y, outgoing.x);
+            normal = (incomingNormal + outgoingNormal).normalized;
+            var denominator = Mathf.Abs(Vector2.Dot(normal, outgoingNormal));
+            scale = Mathf.Min(1.35f, 1f / Mathf.Max(0.35f, denominator));
         }
 
-        private void BuildResidualMesh(Vector2[] positions)
+        private readonly struct WakePathPoint
         {
-            var decalCount = Mathf.Min((positions.Length - 1) / 7, 14);
-            var vertices = new Vector3[decalCount * 4];
-            var uv = new Vector2[vertices.Length];
-            var colors = new Color[vertices.Length];
-            var triangles = new int[decalCount * 6];
-            for (var decalIndex = 0; decalIndex < decalCount; decalIndex++)
+            public WakePathPoint(Vector2 position, float intensity, float age)
             {
-                var pointIndex = Mathf.Min(4 + decalIndex * 7, positions.Length - 2);
-                GetFrame(positions, pointIndex, out var normal);
-                var tangent = new Vector2(normal.y, -normal.x);
-                var random = Mathf.Repeat(decalIndex * 0.618f, 1f);
-                var center = positions[pointIndex] + normal * Mathf.Lerp(-0.55f, 0.55f, random);
-                var halfWidth = Mathf.Lerp(0.16f, 0.34f, random);
-                var halfLength = Mathf.Lerp(0.35f, 0.7f, 1f - random);
-                var vertexIndex = decalIndex * 4;
-                vertices[vertexIndex] = center - normal * halfWidth - tangent * halfLength;
-                vertices[vertexIndex + 1] = center + normal * halfWidth - tangent * halfLength;
-                vertices[vertexIndex + 2] = center - normal * halfWidth + tangent * halfLength;
-                vertices[vertexIndex + 3] = center + normal * halfWidth + tangent * halfLength;
-                uv[vertexIndex] = Vector2.zero;
-                uv[vertexIndex + 1] = Vector2.right;
-                uv[vertexIndex + 2] = Vector2.up;
-                uv[vertexIndex + 3] = Vector2.one;
-                var intensity = GetIntensity(pointIndex, positions.Length, 0f);
-                var alpha = GetAlpha(pointIndex, positions.Length, (float)pointIndex / positions.Length,
-                    intensity) * 0.38f;
-                for (var colorIndex = 0; colorIndex < 4; colorIndex++)
-                {
-                    colors[vertexIndex + colorIndex] = new Color(1f, 1f, 1f, alpha);
-                }
-
-                SetDecalTriangles(triangles, decalIndex * 6, vertexIndex);
+                Position = position;
+                Intensity = intensity;
+                Age = age;
             }
 
-            ApplyMesh(_residualMesh, vertices, uv, colors, triangles);
+            public Vector2 Position { get; }
+            public float Intensity { get; }
+            public float Age { get; }
+
+            public WakePathPoint WithPosition(Vector2 position)
+            {
+                return new WakePathPoint(position, Intensity, Age);
+            }
+
+            public static WakePathPoint Lerp(WakePathPoint first, WakePathPoint second, float factor)
+            {
+                return new WakePathPoint(Vector2.Lerp(first.Position, second.Position, factor),
+                    Mathf.Lerp(first.Intensity, second.Intensity, factor), Mathf.Lerp(first.Age, second.Age, factor));
+            }
         }
     }
 }

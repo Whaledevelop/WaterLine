@@ -13,85 +13,116 @@ MonoBehaviour:
   m_Name: CanopusVisualProfile
   m_EditorClassIdentifier: Assembly-CSharp::Game.Ships.ShipVisualProfile
   <VisualScale>k__BackingField: 0.36
-  <CrossfadeDuration>k__BackingField: 0.1
   <Directions>k__BackingField:
   - <Direction>k__BackingField: 0
     <Sprite>k__BackingField: {fileID: 21300000, guid: e9097796bd805034eabb7f484a523f9c, type: 3}
     <SubmersionMask>k__BackingField: {fileID: 2800000, guid: 0d04e443eb668214aacfb3907c09e9ad, type: 3}
     <WaterlineMask>k__BackingField: {fileID: 2800000, guid: 7d9baf85614fd544384cba80555953ba, type: 3}
+    <BowWaveMask>k__BackingField: {fileID: 2800000, guid: a5e9c3dace470dc42be20cd2142d53dd, type: 3}
     <VisualOffset>k__BackingField: {x: -0.06, y: -0.46}
     <BowAnchor>k__BackingField: {x: 2.224907, y: -0.5971274}
-    <SternAnchor>k__BackingField: {x: -2.2716, y: -0.16560002}
-    <PortAnchor>k__BackingField: {x: 0, y: 0.55}
-    <StarboardAnchor>k__BackingField: {x: 0, y: -0.55}
+    <SternAnchor>k__BackingField: {x: -2.2213101, y: -0.27906016}
+    <PortAnchor>k__BackingField: {x: -0.0216, y: 0.3844}
+    <StarboardAnchor>k__BackingField: {x: -0.0216, y: -0.7156}
     <FoamWidth>k__BackingField: 0.1
+    <BowWaveOffset>k__BackingField: {x: 0, y: -0.6}
+    <BowWaveSize>k__BackingField: {x: 5.2, y: 5.2}
+    <BowWaveAngleOffset>k__BackingField: 0
   - <Direction>k__BackingField: 1
     <Sprite>k__BackingField: {fileID: 21300000, guid: c7ba52429e661a945a909021d531df53, type: 3}
     <SubmersionMask>k__BackingField: {fileID: 2800000, guid: 5a23246cf9f9cd04fa077d7f39f0cd3d, type: 3}
     <WaterlineMask>k__BackingField: {fileID: 2800000, guid: 3dbb5bf76e79af54cb0987b0f78f34c3, type: 3}
+    <BowWaveMask>k__BackingField: {fileID: 2800000, guid: e98eddbaf55bad24a8a6db91c01faa23, type: 3}
     <VisualOffset>k__BackingField: {x: -0.12, y: 0.04}
     <BowAnchor>k__BackingField: {x: 2.045611, y: 0.51321065}
-    <SternAnchor>k__BackingField: {x: -1.7932, y: -1.0856}
-    <PortAnchor>k__BackingField: {x: -0.45, y: 0.55}
-    <StarboardAnchor>k__BackingField: {x: 0.45, y: -0.55}
+    <SternAnchor>k__BackingField: {x: -2.081466, y: -0.92311245}
+    <PortAnchor>k__BackingField: {x: -0.4932, y: 0.5644}
+    <StarboardAnchor>k__BackingField: {x: 0.40679997, y: -0.5356}
     <FoamWidth>k__BackingField: 0.1
+    <BowWaveOffset>k__BackingField: {x: 0, y: 0}
+    <BowWaveSize>k__BackingField: {x: 5.2, y: 5.2}
+    <BowWaveAngleOffset>k__BackingField: -15
   - <Direction>k__BackingField: 2
     <Sprite>k__BackingField: {fileID: 21300000, guid: 2ef1a5132aabbb646a0ab85c1188ae46, type: 3}
     <SubmersionMask>k__BackingField: {fileID: 2800000, guid: 305fd6d3d57436b46ae4144ba060064b, type: 3}
     <WaterlineMask>k__BackingField: {fileID: 2800000, guid: 4b9dc1ca9971938469e0bc9087a7e5d8, type: 3}
+    <BowWaveMask>k__BackingField: {fileID: 2800000, guid: 9ebd53bf0fd2f9d4dbb86c4065da7e15, type: 3}
     <VisualOffset>k__BackingField: {x: -0.02, y: 0}
     <BowAnchor>k__BackingField: {x: 0.06671903, y: 1.0546668}
-    <SternAnchor>k__BackingField: {x: -0.0072000003, y: -1.35}
-    <PortAnchor>k__BackingField: {x: -0.7, y: 0}
-    <StarboardAnchor>k__BackingField: {x: 0.7, y: 0}
+    <SternAnchor>k__BackingField: {x: -0.009000001, y: -0.9962082}
+    <PortAnchor>k__BackingField: {x: -0.7072, y: 0}
+    <StarboardAnchor>k__BackingField: {x: 0.6928, y: 0}
     <FoamWidth>k__BackingField: 0.1
+    <BowWaveOffset>k__BackingField: {x: 0, y: 0}
+    <BowWaveSize>k__BackingField: {x: 5.2, y: 5.2}
+    <BowWaveAngleOffset>k__BackingField: 0
   - <Direction>k__BackingField: 3
     <Sprite>k__BackingField: {fileID: 21300000, guid: 3b983f437ae8549469eeabd632dee73e, type: 3}
     <SubmersionMask>k__BackingField: {fileID: 2800000, guid: d7db523d51fde614684d245c98bc8867, type: 3}
     <WaterlineMask>k__BackingField: {fileID: 2800000, guid: 87e5fbaf5d9403d4a803fe52b5adf336, type: 3}
+    <BowWaveMask>k__BackingField: {fileID: 2800000, guid: df81ece4eaa670a4799aa930a934141a, type: 3}
     <VisualOffset>k__BackingField: {x: 0.12, y: 0.04}
     <BowAnchor>k__BackingField: {x: -2.0492105, y: 0.51321054}
-    <SternAnchor>k__BackingField: {x: 1.7932, y: -1.0856}
-    <PortAnchor>k__BackingField: {x: -0.45, y: -0.55}
-    <StarboardAnchor>k__BackingField: {x: 0.45, y: 0.55}
+    <SternAnchor>k__BackingField: {x: 2.0778666, y: -0.9231132}
+    <PortAnchor>k__BackingField: {x: -0.40679997, y: -0.5356}
+    <StarboardAnchor>k__BackingField: {x: 0.4932, y: 0.5644}
     <FoamWidth>k__BackingField: 0.1
+    <BowWaveOffset>k__BackingField: {x: 0, y: 0}
+    <BowWaveSize>k__BackingField: {x: 5.2, y: 5.2}
+    <BowWaveAngleOffset>k__BackingField: 15
   - <Direction>k__BackingField: 4
     <Sprite>k__BackingField: {fileID: 21300000, guid: 83209c46ed849254d955dddf0c17621a, type: 3}
     <SubmersionMask>k__BackingField: {fileID: 2800000, guid: 16e4c327cffcf844db67731fdcbecd03, type: 3}
     <WaterlineMask>k__BackingField: {fileID: 2800000, guid: 42daa710aae8dc848af3228f24a34f66, type: 3}
+    <BowWaveMask>k__BackingField: {fileID: 2800000, guid: 103ede91a303fba469fd50bdf8b458c8, type: 3}
     <VisualOffset>k__BackingField: {x: 0.06, y: -0.46}
     <BowAnchor>k__BackingField: {x: -2.2285066, y: -0.5974525}
-    <SternAnchor>k__BackingField: {x: 2.2716, y: -0.16560002}
-    <PortAnchor>k__BackingField: {x: 0, y: -0.55}
-    <StarboardAnchor>k__BackingField: {x: 0, y: 0.55}
+    <SternAnchor>k__BackingField: {x: 2.2177112, y: -0.27906016}
+    <PortAnchor>k__BackingField: {x: 0.0216, y: -0.7156}
+    <StarboardAnchor>k__BackingField: {x: 0.0216, y: 0.3844}
     <FoamWidth>k__BackingField: 0.1
+    <BowWaveOffset>k__BackingField: {x: 0, y: 0.6}
+    <BowWaveSize>k__BackingField: {x: 5.2, y: 5.2}
+    <BowWaveAngleOffset>k__BackingField: 0
   - <Direction>k__BackingField: 5
     <Sprite>k__BackingField: {fileID: 21300000, guid: 4f10517378614c1419ff961416c32593, type: 3}
     <SubmersionMask>k__BackingField: {fileID: 2800000, guid: b87e366d8744b1245a99d0f5f1f073ae, type: 3}
     <WaterlineMask>k__BackingField: {fileID: 2800000, guid: 48feb0e93398689469dc7b44f2af620a, type: 3}
+    <BowWaveMask>k__BackingField: {fileID: 2800000, guid: 7de4a64cf9aff0541b73af01ea0a415b, type: 3}
     <VisualOffset>k__BackingField: {x: -0.22, y: -0.08}
     <BowAnchor>k__BackingField: {x: -2.010983, y: -1.2585063}
-    <SternAnchor>k__BackingField: {x: 1.6708, y: 1.0712}
-    <PortAnchor>k__BackingField: {x: 0.45, y: -0.55}
-    <StarboardAnchor>k__BackingField: {x: -0.45, y: 0.55}
+    <SternAnchor>k__BackingField: {x: 1.8829384, y: 0.48929602}
+    <PortAnchor>k__BackingField: {x: 0.3708, y: -0.5788}
+    <StarboardAnchor>k__BackingField: {x: -0.52919996, y: 0.5212}
     <FoamWidth>k__BackingField: 0.1
+    <BowWaveOffset>k__BackingField: {x: 0, y: 0}
+    <BowWaveSize>k__BackingField: {x: 5.2, y: 5.2}
+    <BowWaveAngleOffset>k__BackingField: -15
   - <Direction>k__BackingField: 6
     <Sprite>k__BackingField: {fileID: 21300000, guid: ffdd8a7efea2fb24aa4f483ea1292c00, type: 3}
     <SubmersionMask>k__BackingField: {fileID: 2800000, guid: ebbf8cf1985bdc2478d3481839996afe, type: 3}
     <WaterlineMask>k__BackingField: {fileID: 2800000, guid: 6315862b2c3c1aa4cbc2ea3fd0d69e00, type: 3}
+    <BowWaveMask>k__BackingField: {fileID: 2800000, guid: e76d4f0b15fd84b4d9fa4869d6c571a9, type: 3}
     <VisualOffset>k__BackingField: {x: -0.02, y: -0.02}
     <BowAnchor>k__BackingField: {x: -0.057999555, y: -0.7481265}
-    <SternAnchor>k__BackingField: {x: -0.0072000003, y: 1.3428}
-    <PortAnchor>k__BackingField: {x: 0.7, y: 0}
-    <StarboardAnchor>k__BackingField: {x: -0.7, y: 0}
+    <SternAnchor>k__BackingField: {x: 0.031742476, y: 0.8174438}
+    <PortAnchor>k__BackingField: {x: 0.6928, y: -0.0072000003}
+    <StarboardAnchor>k__BackingField: {x: -0.7072, y: -0.0072000003}
     <FoamWidth>k__BackingField: 0.1
+    <BowWaveOffset>k__BackingField: {x: 0, y: 0}
+    <BowWaveSize>k__BackingField: {x: 5.2, y: 5.2}
+    <BowWaveAngleOffset>k__BackingField: 0
   - <Direction>k__BackingField: 7
     <Sprite>k__BackingField: {fileID: 21300000, guid: 4e1cf744a23417348ae40bc2bcfdce22, type: 3}
     <SubmersionMask>k__BackingField: {fileID: 2800000, guid: c15c23d4fb6cf644ba1afd106bade9bd, type: 3}
     <WaterlineMask>k__BackingField: {fileID: 2800000, guid: 769f7e30097863c48b126ab466ed23dd, type: 3}
+    <BowWaveMask>k__BackingField: {fileID: 2800000, guid: 6f5a6fcfc1bd66a4696ed53621a29e5d, type: 3}
     <VisualOffset>k__BackingField: {x: 0.22, y: -0.08}
     <BowAnchor>k__BackingField: {x: 2.0070345, y: -1.2550159}
-    <SternAnchor>k__BackingField: {x: -1.6708, y: 1.0712}
-    <PortAnchor>k__BackingField: {x: 0.45, y: 0.55}
-    <StarboardAnchor>k__BackingField: {x: -0.45, y: -0.55}
+    <SternAnchor>k__BackingField: {x: -1.8865385, y: 0.48929602}
+    <PortAnchor>k__BackingField: {x: 0.52919996, y: 0.5212}
+    <StarboardAnchor>k__BackingField: {x: -0.3708, y: -0.5788}
     <FoamWidth>k__BackingField: 0.1
+    <BowWaveOffset>k__BackingField: {x: 0, y: 0}
+    <BowWaveSize>k__BackingField: {x: 5.2, y: 5.2}
+    <BowWaveAngleOffset>k__BackingField: 15

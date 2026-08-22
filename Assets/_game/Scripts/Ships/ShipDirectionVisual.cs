@@ -19,6 +19,9 @@ namespace Game.Ships
         public Texture2D WaterlineMask { get; private set; }
 
         [field: SerializeField]
+        public Texture2D BowWaveMask { get; private set; }
+
+        [field: SerializeField]
         public Vector2 VisualOffset { get; private set; }
 
         [field: SerializeField]
@@ -35,5 +38,14 @@ namespace Game.Ships
 
         [field: SerializeField]
         public float FoamWidth { get; private set; } = 0.12f;
+
+        [field: SerializeField]
+        public Vector2 BowWaveOffset { get; private set; }
+
+        [field: SerializeField]
+        public Vector2 BowWaveSize { get; private set; } = new(4f, 2.5f);
+
+        [field: SerializeField]
+        public float BowWaveAngleOffset { get; private set; }
     }
 }

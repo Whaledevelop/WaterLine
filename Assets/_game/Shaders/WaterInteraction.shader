@@ -9,6 +9,8 @@ Shader "Game/WaterInteraction"
         _TextureThreshold("Texture Threshold", Range(0,1)) = 0.58
         _TextureSoftness("Texture Softness", Range(0.01,0.5)) = 0.16
         _EdgeSoftness("Edge Softness", Range(0.01,1)) = 0.12
+        [PerRendererData] _BowWaveMask("Bow Wave Mask", 2D) = "black" {}
+        [PerRendererData] _Intensity("Intensity", Range(0,1)) = 0
     }
     SubShader
     {
@@ -44,9 +46,12 @@ Shader "Game/WaterInteraction"
             float _TextureThreshold;
             float _TextureSoftness;
             float _EdgeSoftness;
+            float _Intensity;
 
             TEXTURE2D(_FoamTex);
             SAMPLER(sampler_FoamTex);
+            TEXTURE2D(_BowWaveMask);
+            SAMPLER(sampler_BowWaveMask);
 
             Varyings Vert(Attributes input)
             {
@@ -66,10 +71,9 @@ Shader "Game/WaterInteraction"
                 half3 foamColor = SAMPLE_TEXTURE2D(_FoamTex, sampler_FoamTex, foamUv).rgb;
                 half foam = dot(foamColor, half3(0.299, 0.587, 0.114));
                 foam = smoothstep(_TextureThreshold - _TextureSoftness, _TextureThreshold + _TextureSoftness, foam);
-                half edge = smoothstep(0, _EdgeSoftness, input.uv.y) * smoothstep(0, _EdgeSoftness, 1 - input.uv.y);
-                half center = 1 - abs(input.uv.y * 2 - 1);
-                half streaks = lerp(0.35, 1, smoothstep(0.08, 0.9, center));
-                half alpha = input.color.a * foam * edge * streaks;
+                half3 maskColor = SAMPLE_TEXTURE2D(_BowWaveMask, sampler_BowWaveMask, input.uv).rgb;
+                half mask = dot(maskColor, half3(0.299, 0.587, 0.114));
+                half alpha = input.color.a * foam * mask * _Intensity;
 
                 return half4(_Tint.rgb * input.color.rgb, alpha * _Tint.a);
             }

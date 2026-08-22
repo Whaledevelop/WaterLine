@@ -34,7 +34,7 @@ Material:
     m_Ints: []
     m_Floats:
     - _RedHullThreshold: 0.178
-    - _UnderwaterAlphaMultiplier: 0.55
+    - _UnderwaterAlphaMultiplier: 0.8
     - _UseSubmersionMask: 0
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}

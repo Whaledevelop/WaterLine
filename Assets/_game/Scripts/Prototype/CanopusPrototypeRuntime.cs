@@ -18,8 +18,7 @@ namespace Game.Prototype
         private readonly ShipFoamView _foamView;
         private readonly ShipWakeView _wakeView;
         private readonly WaterView _waterView;
-        private readonly ShipDirectionResolver _directionResolver = new();
-        private readonly ShipWaterInteractionResolver _waterInteractionResolver;
+        private readonly ShipVisualPoseResolver _visualPoseResolver;
 
         [Inject]
         public CanopusPrototypeRuntime(Camera camera, ShipModel model, ShipMovement movement,
@@ -35,16 +34,16 @@ namespace Game.Prototype
             _foamView = foamView;
             _wakeView = wakeView;
             _waterView = waterView;
-            _waterInteractionResolver = new ShipWaterInteractionResolver(visualProfile);
+            _visualPoseResolver = new ShipVisualPoseResolver(visualProfile);
         }
 
         public void Initialize()
         {
             _model.Position = Vector2.zero;
             _model.Heading = 0f;
-            _directionResolver.Initialize(_model.Heading);
-            _shipView.Initialize(_visualProfile, _directionResolver.CurrentIndex);
-            _foamView.Initialize(_visualProfile, _directionResolver.CurrentIndex);
+            var pose = _visualPoseResolver.Resolve(_model.Position, _model.Heading);
+            _shipView.Initialize(_visualProfile, pose);
+            _foamView.Initialize(_visualProfile, pose);
             UpdateViews(0f);
         }
 
@@ -52,12 +51,6 @@ namespace Game.Prototype
         {
             ProcessInput();
             _movement.Tick(Time.deltaTime);
-            if (_directionResolver.Resolve(_model.Heading))
-            {
-                _shipView.SetDirection(_directionResolver.CurrentIndex);
-                _foamView.SetDirection(_directionResolver.CurrentIndex);
-            }
-
             UpdateViews(Time.deltaTime);
         }
 
@@ -76,11 +69,10 @@ namespace Game.Prototype
         private void UpdateViews(float deltaTime)
         {
             var normalizedSpeed = _model.Speed / _movementSettings.MaximumSpeed;
-            var interactionPose = _waterInteractionResolver.Resolve(_model.Position, _model.Heading);
-            _shipView.Tick(_model.Position, deltaTime);
-            _foamView.Tick(normalizedSpeed, deltaTime);
-            _wakeView.Tick(interactionPose.Bow, interactionPose.Stern, interactionPose.Port,
-                interactionPose.Starboard, normalizedSpeed, deltaTime);
+            var pose = _visualPoseResolver.Resolve(_model.Position, _model.Heading);
+            _shipView.Tick(pose);
+            _foamView.Tick(pose, normalizedSpeed, deltaTime);
+            _wakeView.Tick(pose, normalizedSpeed, deltaTime);
             _waterView.Tick(Time.time);
         }
     }

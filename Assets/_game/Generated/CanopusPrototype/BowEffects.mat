@@ -23,6 +23,10 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _BowWaveMask:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _FoamTex:
         m_Texture: {fileID: 2800000, guid: 7a728ef3dd68a124b97c53a2685a9b12, type: 3}
         m_Scale: {x: 1, y: 1}
@@ -31,6 +35,7 @@ Material:
     m_Floats:
     - _EdgeSoftness: 0.12
     - _FlowSpeed: 0.08
+    - _Intensity: 0
     - _TextureSoftness: 0.16
     - _TextureThreshold: 0.58
     m_Colors:
