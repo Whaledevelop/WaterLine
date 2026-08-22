@@ -27,6 +27,9 @@ namespace Game.Ships
         private float _baseWidth = 0.42f;
 
         [SerializeField]
+        private float _headBlendDistance = 0.85f;
+
+        [SerializeField]
         private float _lifetime = 8f;
 
         private readonly List<WakePoint> _points = new();

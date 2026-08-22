@@ -73,8 +73,9 @@ namespace Game.Ships
                 GetFrame(positions, i, out var normal);
                 var tailFactor = (float)i / (positions.Length - 1);
                 var intensity = GetIntensity(i, normalizedSpeed);
+                var headFactor = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(accumulatedLength / _headBlendDistance));
                 var width = Mathf.Lerp(_baseWidth * Mathf.Lerp(0.9f, 2.2f, intensity), _baseWidth * 0.08f,
-                    Mathf.Pow(tailFactor, 0.68f));
+                    Mathf.Pow(tailFactor, 0.68f)) * Mathf.Lerp(0.06f, 1f, headFactor);
                 var alpha = GetAlpha(i, tailFactor, intensity);
                 var vertexIndex = i * 2;
                 vertices[vertexIndex] = positions[i] - normal * width;
@@ -106,9 +107,13 @@ namespace Game.Ships
                 GetFrame(positions, i, out var normal);
                 var tailFactor = (float)i / (positions.Length - 1);
                 var intensity = GetIntensity(i, normalizedSpeed);
-                var offset = _baseWidth * Mathf.Lerp(1.5f, 4.2f, Mathf.Pow(tailFactor, 0.72f));
-                var stripWidth = _baseWidth * Mathf.Lerp(0.25f, 0.08f, tailFactor);
-                var alpha = GetAlpha(i, tailFactor, intensity) * Mathf.Lerp(0.48f, 0.14f, tailFactor);
+                var headFactor = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(accumulatedLength / _headBlendDistance));
+                var offset = _baseWidth * Mathf.Lerp(0.12f,
+                    Mathf.Lerp(1.5f, 4.2f, Mathf.Pow(tailFactor, 0.72f)), headFactor);
+                var stripWidth = _baseWidth * Mathf.Lerp(0.03f,
+                    Mathf.Lerp(0.25f, 0.08f, tailFactor), headFactor);
+                var alpha = GetAlpha(i, tailFactor, intensity) * Mathf.Lerp(0.18f,
+                    Mathf.Lerp(0.48f, 0.14f, tailFactor), headFactor);
                 var vertexIndex = i * 4;
                 SetStrip(vertices, uv, colors, vertexIndex, positions[i] - normal * offset, normal,
                     stripWidth, accumulatedLength, alpha);
