@@ -6,6 +6,9 @@ Shader "Game/AnimatedWater"
         _LayerOffset("Layer Offset", Vector) = (0,0,0,0)
         _DetailOffset("Detail Offset", Vector) = (0,0,0,0)
         _DetailStrength("Detail Strength", Range(0,1)) = 0.35
+        _LayerScale("Layer Scale", Float) = 0.22
+        _DetailScale("Detail Scale", Float) = 0.41
+        _HighlightContrast("Highlight Contrast", Range(0.25,4)) = 1.35
         _Tint("Tint", Color) = (1,1,1,1)
     }
     SubShader
@@ -32,6 +35,7 @@ Shader "Game/AnimatedWater"
             {
                 float4 positionCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
+                float3 positionWS : TEXCOORD1;
             };
 
             TEXTURE2D(_MainTex);
@@ -41,20 +45,28 @@ Shader "Game/AnimatedWater"
             float4 _DetailOffset;
             float4 _Tint;
             float _DetailStrength;
+            float _LayerScale;
+            float _DetailScale;
+            float _HighlightContrast;
 
             Varyings Vert(Attributes input)
             {
                 Varyings output;
                 output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
                 output.uv = input.uv * _MainTex_ST.xy;
+                output.positionWS = TransformObjectToWorld(input.positionOS.xyz);
                 return output;
             }
 
             half4 Frag(Varyings input) : SV_Target
             {
-                half4 layer = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv + _LayerOffset.xy);
-                half4 detail = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv * 1.37 + _DetailOffset.xy);
-                return lerp(layer, detail, _DetailStrength) * _Tint;
+                float2 worldUv = input.positionWS.xy;
+                half4 layer = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, worldUv * _LayerScale + _LayerOffset.xy);
+                half4 detail = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, worldUv * _DetailScale + _DetailOffset.xy);
+                half4 color = lerp(layer, detail, _DetailStrength);
+                color.rgb = pow(saturate(color.rgb), _HighlightContrast);
+
+                return color * _Tint;
             }
             ENDHLSL
         }

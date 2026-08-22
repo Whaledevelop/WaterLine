@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: AnimatedWater
-  m_Shader: {fileID: 4800000, guid: 8ccb2d40babc3e249895fd024dc738d5, type: 3}
+  m_Name: WaterlineFoam
+  m_Shader: {fileID: 4800000, guid: 96eabb846d22bcd45bf082f2641ca89a, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -27,15 +27,18 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _WaterlineMask:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _DetailScale: 0.41
-    - _DetailStrength: 0.35
-    - _HighlightContrast: 1.35
-    - _LayerScale: 0.22
+    - _Intensity: 0
+    - _NoiseScale: 4.5
     m_Colors:
-    - _DetailOffset: {r: 0, g: 0, b: 0, a: 0}
-    - _LayerOffset: {r: 0, g: 0, b: 0, a: 0}
-    - _Tint: {r: 1, g: 1, b: 1, a: 1}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _NoiseSpeed: {r: 0.11, g: 0.035, b: 0, a: 0}
+    - _RendererColor: {r: 1, g: 1, b: 1, a: 1}
+    - _Tint: {r: 0.88, g: 0.97999996, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

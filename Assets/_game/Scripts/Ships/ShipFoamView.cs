@@ -4,31 +4,81 @@ namespace Game.Ships
 {
     public sealed class ShipFoamView : MonoBehaviour
     {
-        [SerializeField]
-        private LineRenderer _lineRenderer;
+        private static readonly int WaterlineMaskId = Shader.PropertyToID("_WaterlineMask");
+        private static readonly int IntensityId = Shader.PropertyToID("_Intensity");
 
         [SerializeField]
-        private Color _idleColor = new(0.85f, 0.95f, 1f, 0.35f);
+        private SpriteRenderer _primaryRenderer;
 
         [SerializeField]
-        private Color _movingColor = new(1f, 1f, 1f, 0.9f);
+        private SpriteRenderer _secondaryRenderer;
 
-        private readonly Vector3[] _positions = new Vector3[5];
+        private MaterialPropertyBlock _propertyBlock;
+        private SpriteRenderer _activeRenderer;
+        private SpriteRenderer _fadingRenderer;
+        private ShipVisualProfile _profile;
+        private float _fadeProgress;
+        private float _intensity;
 
-        public void Tick(Vector2 shipPosition, ShipVisualAnchors anchors, float normalizedSpeed)
+        public void Initialize(ShipVisualProfile profile, int directionIndex)
         {
-            _positions[0] = shipPosition + anchors.Bow;
-            _positions[1] = shipPosition + anchors.Port;
-            _positions[2] = shipPosition + anchors.Stern;
-            _positions[3] = shipPosition + anchors.Starboard;
-            _positions[4] = _positions[0];
-            _lineRenderer.positionCount = _positions.Length;
-            _lineRenderer.SetPositions(_positions);
-            _lineRenderer.startWidth = anchors.FoamWidth;
-            _lineRenderer.endWidth = anchors.FoamWidth;
-            var color = Color.Lerp(_idleColor, _movingColor, normalizedSpeed);
-            _lineRenderer.startColor = color;
-            _lineRenderer.endColor = color;
+            _propertyBlock = new MaterialPropertyBlock();
+            _profile = profile;
+            _activeRenderer = _primaryRenderer;
+            _fadingRenderer = _secondaryRenderer;
+            ApplyVisual(_activeRenderer, profile.GetVisual(directionIndex));
+            SetAlpha(_activeRenderer, 1f);
+            SetAlpha(_fadingRenderer, 0f);
+        }
+
+        public void SetDirection(int directionIndex)
+        {
+            var previousRenderer = _activeRenderer;
+            _activeRenderer = _fadingRenderer;
+            _fadingRenderer = previousRenderer;
+            ApplyVisual(_activeRenderer, _profile.GetVisual(directionIndex));
+            SetAlpha(_activeRenderer, 0f);
+            SetAlpha(_fadingRenderer, 1f);
+            _fadeProgress = 0f;
+        }
+
+        public void Tick(float normalizedSpeed, float deltaTime)
+        {
+            _intensity = Mathf.Lerp(_intensity, normalizedSpeed, 1f - Mathf.Exp(-deltaTime * 7f));
+            SetIntensity(_activeRenderer, _intensity);
+            SetIntensity(_fadingRenderer, _intensity);
+            if (_fadeProgress >= 1f)
+            {
+                return;
+            }
+
+            _fadeProgress = Mathf.Clamp01(_fadeProgress + deltaTime / _profile.CrossfadeDuration);
+            SetAlpha(_activeRenderer, _fadeProgress);
+            SetAlpha(_fadingRenderer, 1f - _fadeProgress);
+        }
+
+        private void ApplyVisual(SpriteRenderer spriteRenderer, ShipDirectionVisual visual)
+        {
+            spriteRenderer.sprite = visual.Sprite;
+            spriteRenderer.transform.localPosition = visual.VisualOffset;
+            spriteRenderer.GetPropertyBlock(_propertyBlock);
+            _propertyBlock.SetTexture(WaterlineMaskId, visual.WaterlineMask);
+            _propertyBlock.SetFloat(IntensityId, _intensity);
+            spriteRenderer.SetPropertyBlock(_propertyBlock);
+        }
+
+        private void SetIntensity(SpriteRenderer spriteRenderer, float intensity)
+        {
+            spriteRenderer.GetPropertyBlock(_propertyBlock);
+            _propertyBlock.SetFloat(IntensityId, intensity);
+            spriteRenderer.SetPropertyBlock(_propertyBlock);
+        }
+
+        private static void SetAlpha(SpriteRenderer spriteRenderer, float alpha)
+        {
+            var color = spriteRenderer.color;
+            color.a = alpha;
+            spriteRenderer.color = color;
         }
     }
 }

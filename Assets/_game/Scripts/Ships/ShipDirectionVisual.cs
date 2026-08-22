@@ -16,6 +16,9 @@ namespace Game.Ships
         public Texture2D SubmersionMask { get; private set; }
 
         [field: SerializeField]
+        public Texture2D WaterlineMask { get; private set; }
+
+        [field: SerializeField]
         public Vector2 VisualOffset { get; private set; }
 
         [field: SerializeField]

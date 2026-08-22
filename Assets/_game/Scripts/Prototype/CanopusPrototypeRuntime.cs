@@ -19,6 +19,7 @@ namespace Game.Prototype
         private readonly ShipWakeView _wakeView;
         private readonly WaterView _waterView;
         private readonly ShipDirectionResolver _directionResolver = new();
+        private readonly ShipWaterInteractionResolver _waterInteractionResolver;
 
         [Inject]
         public CanopusPrototypeRuntime(Camera camera, ShipModel model, ShipMovement movement,
@@ -34,6 +35,7 @@ namespace Game.Prototype
             _foamView = foamView;
             _wakeView = wakeView;
             _waterView = waterView;
+            _waterInteractionResolver = new ShipWaterInteractionResolver(visualProfile);
         }
 
         public void Initialize()
@@ -42,6 +44,7 @@ namespace Game.Prototype
             _model.Heading = 0f;
             _directionResolver.Initialize(_model.Heading);
             _shipView.Initialize(_visualProfile, _directionResolver.CurrentIndex);
+            _foamView.Initialize(_visualProfile, _directionResolver.CurrentIndex);
             UpdateViews(0f);
         }
 
@@ -52,6 +55,7 @@ namespace Game.Prototype
             if (_directionResolver.Resolve(_model.Heading))
             {
                 _shipView.SetDirection(_directionResolver.CurrentIndex);
+                _foamView.SetDirection(_directionResolver.CurrentIndex);
             }
 
             UpdateViews(Time.deltaTime);
@@ -71,23 +75,12 @@ namespace Game.Prototype
 
         private void UpdateViews(float deltaTime)
         {
-            _directionResolver.GetInterpolation(_model.Heading, out var fromIndex, out var toIndex, out var factor);
-            var anchors = InterpolateAnchors(_visualProfile.GetVisual(fromIndex), _visualProfile.GetVisual(toIndex), factor);
             var normalizedSpeed = _model.Speed / _movementSettings.MaximumSpeed;
+            var interactionPose = _waterInteractionResolver.Resolve(_model.Position, _model.Heading);
             _shipView.Tick(_model.Position, deltaTime);
-            _foamView.Tick(_model.Position, anchors, normalizedSpeed);
-            _wakeView.Tick(_model.Position + anchors.Stern, normalizedSpeed);
+            _foamView.Tick(normalizedSpeed, deltaTime);
+            _wakeView.Tick(interactionPose.Stern, normalizedSpeed, deltaTime);
             _waterView.Tick(Time.time);
-        }
-
-        private static ShipVisualAnchors InterpolateAnchors(ShipDirectionVisual from, ShipDirectionVisual to, float factor)
-        {
-            return new ShipVisualAnchors(
-                Vector2.Lerp(from.BowAnchor, to.BowAnchor, factor),
-                Vector2.Lerp(from.SternAnchor, to.SternAnchor, factor),
-                Vector2.Lerp(from.PortAnchor, to.PortAnchor, factor),
-                Vector2.Lerp(from.StarboardAnchor, to.StarboardAnchor, factor),
-                Mathf.Lerp(from.FoamWidth, to.FoamWidth, factor));
         }
     }
 }
